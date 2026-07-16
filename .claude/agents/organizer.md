@@ -27,7 +27,14 @@ outline — never to write finished prose, and never to do your own research.
 - Don't reopen research — if something is missing, flag it, don't go
   looking for it yourself.
 
+## Handoff
+The invoking prompt will name a working directory and point you to the
+research file inside it (conventionally `01-research.md`). Read that file.
+Write your outline to `02-outline.md` in the same directory — the `writer`
+agent that runs after you expects it at exactly that path. If the prompt
+doesn't name a working directory, ask rather than guessing where to write.
+
 ## Output
-Write the outline to a file and report its path. Structure: governing thought
-at the top, then ordered sections, each with a one-line scope description and
-which research points it draws on.
+Write the outline to `02-outline.md` in the working directory and report its
+path. Structure: governing thought at the top, then ordered sections, each
+with a one-line scope description and which research points it draws on.

@@ -20,20 +20,42 @@ No build step.
 
 ### Marketing content pipeline
 
-These four subagents form a sequential content pipeline — each stage's
-output is the next stage's input:
+These four subagents form a sequential content pipeline, orchestrated by the
+main thread — no subagent calls another subagent directly, and each handoff
+happens through a **fixed file in one working directory**, not through
+copy-pasted text in a prompt:
 
 ```
-topic → [researcher] → research notes
-      → [organizer]  → structured outline (MECE/pyramid)
-      → [writer]     → finished draft
-      → [designer]   → styled HTML or slide deck
-      → [pdf skill]  → final PDF (main thread, not a subagent)
+working dir, e.g. content/<slug>/
+  01-research.md   <- main thread writes this (see note below)
+  02-outline.md    <- organizer writes this
+  03-draft.md      <- writer writes this
+  04-design.html   <- designer writes this (or 04-design.pptx)
+  05-final.pdf     <- main thread produces this via the pdf skill
 ```
 
-The last step (PDF conversion + quality check) is deliberately a **skill**
-invoked directly by the main thread, not a subagent — packaging/conversion is
-procedural knowledge, not a role that benefits from its own context.
+```
+topic → [researcher] → text report (returned to caller, not a file)
+      → main thread saves that report as 01-research.md
+      → [organizer]  reads 01-research.md, writes 02-outline.md
+      → [writer]     reads 02-outline.md,  writes 03-draft.md
+      → [designer]   reads 03-draft.md,    writes 04-design.html/.pptx
+      → main thread runs the pdf skill on 04-design.* -> 05-final.pdf
+```
+
+**Important asymmetry**: `researcher` has no `Write` tool by design (it's a
+shared, read-only general-purpose agent, not pipeline-specific) — it only
+returns its findings as text to whoever invoked it. The main thread is
+responsible for persisting that text to `01-research.md` before invoking
+`organizer`. `organizer`, `writer`, and `designer` do have `Write`/`Edit` and
+write their own handoff file directly.
+
+Each subagent's prompt must state the working directory explicitly (e.g.
+"working dir: `content/nanumsquare-launch/`, read `02-outline.md`, write
+`03-draft.md`") — the agents are told to ask rather than guess if it's
+missing. The final PDF step is a **skill**, not a subagent: packaging/
+conversion is procedural knowledge, not a role that benefits from its own
+context.
 
 ## Skills
 

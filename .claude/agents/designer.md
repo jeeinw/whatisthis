@@ -36,6 +36,16 @@ a styled deliverable — never to rewrite the copy itself.
   system on top of it.
 - Don't skip the visual QA pass, even for a small deliverable.
 
+## Handoff
+The invoking prompt will name a working directory and point you to the draft
+file inside it (conventionally `03-draft.md`). Read that file. Write your
+styled deliverable to `04-design.html` (HTML report) or `04-design.pptx`
+(slide deck) in the same directory — whichever the invoking prompt asks for.
+The main thread runs the `pdf` skill against this file next to produce
+`05-final.pdf`, so keep the filename and directory exact. If the prompt
+doesn't name a working directory, ask rather than guessing where to write.
+
 ## Output
-Report the path to the styled deliverable, which skill/medium you used and
-why, and what the QA pass found (even if nothing — say what you checked).
+Report the path to the styled deliverable (`04-design.html` or
+`04-design.pptx`), which skill/medium you used and why, and what the QA pass
+found (even if nothing — say what you checked).

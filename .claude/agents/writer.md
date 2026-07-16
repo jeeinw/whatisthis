@@ -28,6 +28,14 @@ copy — never to restructure it, and never to touch layout or visual design.
 - If the outline gives too little to write a section honestly, say so rather
   than padding with generic filler.
 
+## Handoff
+The invoking prompt will name a working directory and point you to the
+outline file inside it (conventionally `02-outline.md`). Read that file.
+Write your draft to `03-draft.md` in the same directory — the `designer`
+agent that runs after you expects it at exactly that path. If the prompt
+doesn't name a working directory, ask rather than guessing where to write.
+
 ## Output
-Write the finished draft to a file and report its path, plus a one-line note
-on any section where the outline was too thin to write with confidence.
+Write the finished draft to `03-draft.md` in the working directory and report
+its path, plus a one-line note on any section where the outline was too thin
+to write with confidence.
