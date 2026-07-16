@@ -19,3 +19,11 @@ No build step.
     exhibit style (governing-thought titles, navy/blue category color-coding,
     minimal gray bar charts). Offer it as an option whenever the user asks for
     a "consulting", "McKinsey/MBB", "executive", or "case study" style deck.
+
+## References
+
+- `.claude/references/anti-ai-tells.md` — how to prompt for output (prose,
+  slides, code) that doesn't read as AI-generated: banned vocabulary/phrases,
+  structural tells, and domain-specific rules. Consult before writing any
+  substantial user-facing text or slide content, or when asked to make
+  something sound "less AI" / more natural.
