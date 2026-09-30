@@ -6,7 +6,14 @@ const PUBLIC_PATHS = ["/login", "/auth/"];
 /** 세션 쿠키 갱신 + 비로그인 사용자는 /login 으로. 데이터 접근 권한 자체는 DB의 RLS가 판단한다. */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // The Supabase integration can be connected after the first deployment.
+  // Do not crash every route while those variables are still unavailable.
+  if (!url || !key) return response;
+
+  const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
