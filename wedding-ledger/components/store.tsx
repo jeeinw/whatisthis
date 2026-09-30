@@ -64,6 +64,9 @@ function emptyLedger(): Ledger {
   return { planners: {}, vendors: {}, quotes: {}, extras: {}, halls: {}, dresses: {}, budget: {}, homes: {}, priceLists: {}, settings: {} };
 }
 
+/** Storage에 올린 사진 경로인지 (legacy data URL·빈 값 제외) */
+const isStoragePath = (p: unknown): p is string => typeof p === "string" && p !== "" && !p.startsWith("data:");
+
 function newId(col: string) {
   return col[0] + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -131,6 +134,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase, commit]);
 
+  /* ---------- Realtime: 다른 사람(또는 다른 탭)의 변경 반영 ---------- */
+  useEffect(() => {
+    if (status !== "ready") return;
+    const colOf = Object.fromEntries(Object.entries(TABLE).map(([c, t]) => [t, c as Col]));
+    const channel = supabase.channel("ledger");
+    for (const table of Object.values(TABLE)) {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, (payload) => {
+        const col = colOf[table];
+        const L = ledgerRef.current;
+        if (payload.eventType === "DELETE") {
+          const id = (payload.old as { id?: string }).id;
+          if (!id || col === "settings" || !(id in L[col])) return;
+          const rest = { ...(L[col] as Record<string, Obj>) };
+          delete rest[id];
+          commit({ ...L, [col]: rest });
+          return;
+        }
+        const row = payload.new as Row;
+        // 이 문서에 아직 저장 안 된 내 수정이 있으면 내 것을 유지 (곧 저장되면서 덮어씀)
+        if (timers.current.has(`${col}/${row.id}`)) return;
+        if (col === "settings") {
+          if (row.id === SETTINGS_ID && JSON.stringify(L.settings) !== JSON.stringify(row.data)) commit({ ...L, settings: row.data });
+          return;
+        }
+        const cur = (L[col] as Record<string, Obj>)[row.id];
+        if (cur && JSON.stringify(cur) === JSON.stringify(row.data)) return; // 내 저장의 메아리
+        commit({ ...L, [col]: { ...L[col], [row.id]: row.data } });
+      });
+    }
+    channel.subscribe((st) => {
+      if (st === "CHANNEL_ERROR" || st === "TIMED_OUT") setSync("실시간 연결 끊김 — 새로고침 필요");
+    });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [status, supabase, commit]);
+
   /* ---------- 저장 ---------- */
   const flush = useCallback(
     async (col: Col, id: string) => {
@@ -166,11 +206,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const cur = (L[col] as Record<string, Obj>)[id];
         if (!cur) return;
         next = { ...L, [col]: { ...L[col], [id]: deepMerge(clone(cur), patch) } };
+        if ("photo" in patch && isStoragePath(cur.photo) && cur.photo !== patch.photo) void supabase.storage.from("photos").remove([cur.photo]);
       }
       commit(next);
       schedule(col, col === "settings" ? SETTINGS_ID : id);
     },
-    [commit, schedule],
+    [commit, schedule, supabase],
   );
 
   const setSettings = useCallback((patch: Obj) => write("settings", SETTINGS_ID, patch), [write]);
@@ -193,8 +234,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (col: CollectionName, id: string) => {
       const L = ledgerRef.current;
       const rest = { ...(L[col] as Record<string, Obj>) };
+      const photo = rest[id]?.photo;
       delete rest[id];
       commit({ ...L, [col]: rest });
+      if (isStoragePath(photo)) void supabase.storage.from("photos").remove([photo]);
       clearTimeout(timers.current.get(`${col}/${id}`));
       timers.current.delete(`${col}/${id}`);
       supabase

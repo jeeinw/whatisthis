@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TABS } from "@/lib/constants";
 import { dressPriceIndex } from "@/lib/calc/dress";
 import { listOf } from "@/lib/calc/wedding";
@@ -27,6 +27,29 @@ function DDay({ date }: { date: string }) {
   if (!date) return null;
   const d = Math.ceil((new Date(date + "T00:00:00").getTime() - new Date(new Date().toDateString()).getTime()) / 864e5);
   return <span className="dday">{d > 0 ? "D-" + d : d === 0 ? "D-DAY" : "D+" + -d}</span>;
+}
+
+function ExportButton() {
+  const { ledger, s, toast } = useStore();
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    setBusy(true);
+    try {
+      const [XLSX, { buildSheets }] = await Promise.all([import("xlsx"), import("@/lib/export")]);
+      const wb = XLSX.utils.book_new();
+      for (const sh of buildSheets(ledger, s)) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sh.rows.length ? sh.rows : [{}]), sh.name);
+      XLSX.writeFile(wb, `결혼준비_장부_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e) {
+      toast(`내보내지 못했어요 (${(e as Error).message})`);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button className="btn" onClick={run} disabled={busy}>
+      {busy ? "만드는 중…" : "엑셀로 내보내기"}
+    </button>
+  );
 }
 
 function Shell() {
@@ -65,6 +88,7 @@ function Shell() {
         </div>
         <div className="top-actions">
           <span className="sync">{sync}</span>
+          <ExportButton />
           <form action="/auth/signout" method="post">
             <button className="btn small ghost">로그아웃</button>
           </form>
