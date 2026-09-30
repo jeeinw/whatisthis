@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>J & D 결혼 준비 장부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --paper:#F3F4F1; --surface:#FFFFFF; --ink:#1E222A; --muted:#676C75; --line:#D9DCD4; --soft:#ECEEE9;
+  --ribbon:#7B2D48; --ribbon-soft:#F3E4EA; --sage:#4F6B55; --sage-soft:#E3EBE3; --gold:#9A7334; --warn:#A3462B;
+  --serif:"Gowun Batang","Nanum Myeongjo",Georgia,serif;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#15171B; --surface:#1C1F25; --ink:#E8E6E1; --muted:#9A9FA8; --line:#30343C; --soft:#23262D;
+  --ribbon:#E08FAC; --ribbon-soft:#3A2330; --sage:#93B79A; --sage-soft:#223027; --gold:#D4AE6C; --warn:#E28A6E; } }
+:root[data-theme="dark"]{
+  --paper:#15171B; --surface:#1C1F25; --ink:#E8E6E1; --muted:#9A9FA8; --line:#30343C; --soft:#23262D;
+  --ribbon:#E08FAC; --ribbon-soft:#3A2330; --sage:#93B79A; --sage-soft:#223027; --gold:#D4AE6C; --warn:#E28A6E; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--ribbon)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ribbon);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding:28px 24px 80px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}
+h1{font-family:var(--serif);font-weight:700;font-size:34px;line-height:1.15;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);margin-top:6px}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sync{font-size:12px;color:var(--muted)}
+.btn{white-space:nowrap;flex-shrink:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ribbon);border-color:var(--ribbon);color:#fff}
+.btn.small{padding:4px 9px;font-size:12px}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--warn)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;margin:18px 0 22px;border-bottom:1px solid var(--line)}
+nav.tabs button{background:none;border:0;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ribbon)}
+nav.tabs .count{font-size:11px;color:var(--muted);margin-left:4px}
+h2{font-family:var(--serif);font-size:22px;margin:0 0 4px}
+h3{font-size:15px;margin:0 0 8px;font-weight:600}
+.lead{color:var(--muted);margin:0 0 16px;max-width:72ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.filters input,.filters select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px}
+.filters label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.spacer{flex:1}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table.sheet{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+.sheet th,.sheet td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+.sheet th{position:sticky;top:0;background:var(--soft);font-weight:600;font-size:12px;color:var(--muted);cursor:pointer;user-select:none;z-index:1}
+.sheet th.sc{color:var(--gold)}
+.sheet th[data-dir="asc"]::after{content:" ▲";font-size:9px}
+.sheet th[data-dir="desc"]::after{content:" ▼";font-size:9px}
+.sheet tr:hover td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.sheet td.num{text-align:right}
+.sheet td.wrap{white-space:normal;min-width:220px;max-width:340px}
+.sheet td.name{white-space:normal;min-width:150px;max-width:230px;font-weight:600;position:sticky;left:0;background:var(--surface);z-index:0}
+.sheet td.name button{background:none;border:0;padding:0;cursor:pointer;font-weight:600;text-align:left;color:var(--ink)}
+.sheet td.name button:hover{color:var(--ribbon);text-decoration:underline}
+.sheet select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:2px 4px;font-size:12px}
+.sheet select.score{width:46px;color:var(--gold);font-weight:600}
+.avg{font-weight:600}
+.avg .bar{display:inline-block;width:36px;height:4px;background:var(--soft);border-radius:2px;margin-left:6px;vertical-align:middle;overflow:hidden}
+.avg .bar i{display:block;height:100%;background:var(--gold)}
+.thumb{width:44px;height:44px;border-radius:6px;object-fit:cover;display:block;background:var(--soft)}
+.thumb.empty{display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);border:1px dashed var(--line)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted);margin:1px 2px 1px 0}
+.st{font-size:12px;font-weight:600;border-radius:6px;padding:2px 4px}
+.st-계약,.st-가계약{color:var(--sage)}
+.st-제외{color:var(--muted);text-decoration:line-through}
+.delta-plus{color:var(--warn)} .delta-zero{color:var(--sage)}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.links a{margin-right:8px;font-size:12px}
+/* ledger */
+.ledger{display:grid;grid-template-columns:minmax(260px,1.1fr) 2fr;gap:24px;align-items:start}
+@media (max-width:860px){.ledger{grid-template-columns:1fr}}
+.total{font-family:var(--serif);font-size:44px;line-height:1.05;font-weight:700;color:var(--ribbon);font-variant-numeric:tabular-nums}
+.total small{font-size:18px;color:var(--ink);margin-left:4px}
+.lines{display:grid;gap:0}
+.lines .row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dotted var(--line)}
+.lines .row b{font-variant-numeric:tabular-nums}
+.lines .row .k{color:var(--muted)}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.pick{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface)}
+.pick ol{margin:6px 0 0;padding-left:18px}
+.pick li{margin:2px 0}
+.pick li button{white-space:normal;text-align:left;font-weight:500;color:var(--ink);background:none;border:0;padding:0;cursor:pointer}
+.pick li button:hover{color:var(--ribbon);text-decoration:underline}
+.note{border-left:3px solid var(--ribbon);background:var(--ribbon-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0;max-width:80ch}
+.field-inline{display:inline-flex;align-items:center;gap:8px}
+.field-inline input{width:90px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface);text-align:right}
+/* quote */
+.quote-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.sim{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.sim label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.sim select{border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--surface);color:var(--ink);font-size:14px}
+.simtotal{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.simtotal .big{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--ribbon);font-variant-numeric:tabular-nums}
+.extras td input[type=number]{width:100px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface);text-align:right}
+/* dress board */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--soft)}
+.card .body{padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.card select,.card input{border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface);width:100%;font-size:12px}
+.hearts{display:flex;gap:2px}
+.hearts button{background:none;border:0;cursor:pointer;font-size:17px;padding:0 1px;color:var(--line);line-height:1}
+.hearts button.on{color:var(--ribbon)}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:26px;text-align:center;color:var(--muted);background:var(--surface);cursor:pointer}
+.drop.over{border-color:var(--ribbon);color:var(--ribbon)}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,12,16,.35);z-index:20}
+aside.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);gap:10px}
+.drawer header h2{font-size:20px}
+.drawer .content{overflow-y:auto;padding:16px 20px 40px;display:grid;gap:12px}
+.drawer label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.drawer input,.drawer select,.drawer textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--surface);color:var(--ink);font-size:14px;width:100%}
+.drawer textarea{min-height:76px;resize:vertical}
+.drawer .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.drawer .photo{display:flex;gap:12px;align-items:center}
+.drawer .photo img{width:120px;height:150px;object-fit:cover;border-radius:8px;background:var(--soft)}
+.drawer .scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:40}
+.empty-state{padding:30px;text-align:center;color:var(--muted)}
+@media (max-width:640px){ .wrap{padding:18px 14px 60px} h1{font-size:27px} .total{font-size:36px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* v2 additions */
+.initials{font-family:var(--serif);font-weight:700;font-size:44px;line-height:1;letter-spacing:.02em}
+.initials .amp{color:var(--ribbon);margin:0 .12em}
+.dday{display:inline-block;margin-left:10px;font-size:13px;font-weight:600;color:var(--ribbon);vertical-align:middle;border:1px solid var(--ribbon);border-radius:999px;padding:2px 10px}
+.progress{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;margin:10px 0 4px;position:relative}
+.progress i{display:block;height:100%;background:var(--sage)}
+.progress.over i{background:var(--warn)}
+.gbars{display:grid;gap:8px;margin-top:6px}
+.gbar{display:grid;grid-template-columns:92px 1fr 88px;gap:10px;align-items:center;font-size:13px}
+.gbar .track{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}
+.gbar .track i{display:block;height:100%;background:var(--ribbon)}
+.gbar b{text-align:right;font-variant-numeric:tabular-nums}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v.bad{color:var(--warn)} .stat .v.good{color:var(--sage)}
+.stat .s{font-size:12px;color:var(--muted);margin-top:2px}
+/* budget */
+.bgroup{margin-bottom:18px}
+.bgroup-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 6px}
+.bgroup-head h3{font-family:var(--serif);font-size:18px;margin:0}
+.bgroup-head .gt{font-variant-numeric:tabular-nums;font-weight:600}
+.sheet input.cell{width:92px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--surface);text-align:right;font-size:13px}
+.sheet input.cell.memo{width:170px;text-align:left}
+.sheet .auto{color:var(--sage);font-weight:600}
+.sheet tr.sub td{background:color-mix(in srgb,var(--soft) 45%,transparent);font-size:12px}
+.sheet tr.sub td:first-child{padding-left:26px}
+.linkbtn{background:none;border:0;padding:0;color:var(--ribbon);cursor:pointer;font-size:12px;text-decoration:underline}
+.overcap{color:var(--warn);font-size:11px;display:block}
+.budget-bar{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0 12px;border-bottom:1px solid var(--line);margin-bottom:14px;display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}
+.budget-bar .big{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ribbon);font-variant-numeric:tabular-nums}
+.unit{font-size:11px;color:var(--muted)}
+/* house */
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px}
+.formgrid label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.formgrid input,.formgrid select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--surface);color:var(--ink);font-size:14px;width:100%;font-variant-numeric:tabular-nums}
+.formgrid .hint{font-size:11px;color:var(--muted);min-height:14px}
+.chk{display:flex!important;grid-template-columns:none!important;align-items:center;gap:8px;font-size:13px!important;color:var(--ink)!important}
+.chk input{width:auto!important}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:4px 0 12px}
+.seg button{border:0;background:var(--surface);padding:7px 16px;cursor:pointer;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.why{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+.why b{color:var(--ink)}
+.chart{width:100%;height:auto;display:block}
+.section{margin-top:26px}
+.checkgroup{margin:8px 0}
+.checkgroup h4{font-size:13px;margin:10px 0 4px}
+.checkgroup label{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink);padding:2px 0}
+.ok{color:var(--sage);font-weight:600} .no{color:var(--warn);font-weight:600}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.src{border-color:var(--gold);color:var(--gold)}
+.cheapest{color:var(--sage);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="initials" aria-label="J와 D">J<span class="amp">&amp;</span>D<span id="dday"></span></div>
+      <div class="sub">결혼 준비 장부</div>
+    </div>
+    <div class="top-actions">
+      <span class="sync" id="sync">불러오는 중</span>
+      <button class="btn" id="exportBtn" hidden>엑셀로 내보내기</button>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="main"></main>
+</div>
+<div id="drawerRoot"></div>
+<input type="file" id="filePick" accept="image/*" hidden>
+<input type="file" id="filePickMulti" accept="image/*" multiple hidden>
+<script>
+(function(){
+"use strict";
+/* ================= constants ================= */
+const COLS=["planners","vendors","quotes","extras","halls","dresses","budget","homes","priceLists"];
+const TABS=[
+  {id:"summary",label:"요약"},{id:"budget",label:"전체 예산"},{id:"planner",label:"플래너·견적"},
+  {id:"studio",label:"스튜디오"},{id:"dress",label:"드레스"},{id:"dprice",label:"드레스 견적 비교"},{id:"makeup",label:"메이크업"},
+  {id:"hall",label:"웨딩홀"},{id:"board",label:"드레스 보드"},{id:"house",label:"신혼집·임장"}
+];
+const SCORE={
+  planner:[["resp","응대·소통"],["price","가격"],["lineup","제휴 라인업"],["trans","견적 투명성"],["care","일정 관리"]],
+  studio:[["quality","결과물"],["taste","취향 일치"],["price","가격"],["access","접근성"],["review","후기"]],
+  dress:[["design","디자인"],["fit","체형 핏"],["price","가격"],["trans","추가금 투명성"],["service","응대"]],
+  makeup:[["style","스타일"],["skin","피부 표현"],["price","가격"],["review","후기"],["service","응대"]],
+  hall:[["loc","위치·교통"],["mood","홀 분위기"],["food","식사"],["price","가격"],["park","주차"],["flow","동선·단독성"]],
+  home:[["transit","교통·출퇴근"],["life","생활 편의"],["school","학군"],["complex","단지·관리"],["light","채광·향"],["noise","소음·주변"],["future","미래가치"]]
+};
+const V_STATUS=["관심","상담예정","견적받음","투어완료","계약","보류","제외"];
+const H_STATUS=["미정","관심","투어예정","투어완료","가계약","계약","제외"];
+const HOME_STATUS=["관심","임장예정","임장완료","협상중","계약","제외"];
+const B_STATUS=["미정","알아보는 중","견적","확정","지불 완료"];
+const PAYERS=["공동","J","D","J 부모님","D 부모님"];
+const RANK={"계약":6,"가계약":5,"협상중":5,"투어완료":4,"임장완료":4,"견적받음":3.5,"투어예정":3,"임장예정":3,"상담예정":2.5,"관심":2,"미정":1,"보류":0.5,"제외":0};
+const rank=s=>RANK[s]!=null?RANK[s]:1;
+const ZONES=["강남권","도심권","서남권","서북권","동북권","기타"];
+const HALL_TYPES=["컨벤션","호텔","하우스","채플"];
+const SILHOUETTES=["","A라인","벨라인","머메이드","슬림·시스","엠파이어","볼가운","미니"];
+const USES=["","리허설 촬영","본식","2부","미정"];
+const CAT_LABEL={studio:"스튜디오",dress:"드레스",makeup:"메이크업",snap:"본식스냅",etc:"기타"};
+const WEDDING_GROUPS=["예식","스드메","예물·예복","인사·모임","신혼여행","관리","기타"];
+const HOUSE_GROUP="신혼집·살림";
+const CHECKS=[
+  ["출발 전",[["rt","국토부 실거래가·KB시세 최근 3개월 확인"],["reg","등기부등본 (근저당·가압류·소유자)"],["bld","건축물대장 (위반건축물 여부)"],["sch","배정 초·중학교, 학원가 거리"],["plan","재건축·교통 호재, 주변 개발 계획"],["fee","관리비 수준 (겨울철 포함)"]]],
+  ["단지 밖",[["walk","역까지 실제 도보 시간·경사"],["noise","큰길·철도·학교 소음"],["infra","마트·병원·공원·편의시설"],["bad","유흥·유해시설, 밤길 분위기"]]],
+  ["단지 안",[["park","밤 9시 이후 주차 여유"],["dong","동 간 거리·향·조망"],["comm","커뮤니티·관리 상태·청결"],["elev","엘리베이터·분리수거·택배"]]],
+  ["집 안",[["sun","시간대별 채광"],["leak","누수·곰팡이·결로 흔적"],["water","수압·배수·보일러"],["window","샷시·단열"],["floor","층간소음 (윗집 생활 시간대)"]]],
+  ["전세라면",[["senior","선순위 채권 + 보증금 ≤ 시세 70%"],["ratio","전세가율 (높으면 위험)"],["tax","집주인 국세·지방세 체납 확인"],["guar","전세보증보험 가입 가능 여부"],["fix","잔금일 전입신고·확정일자 동선"]]]
+];
+
+/* ================= state ================= */
+const state={planners:{},vendors:{},quotes:{},extras:{},halls:{},dresses:{},budget:{},homes:{},priceLists:{},settings:{}};
+const DEF_SETTINGS={guests:200,mainHall:"",mainQuote:"",weddingDate:"",target:40000000,giftIncome:null,
+  fin:{jAsset:null,dAsset:null,jParents:null,dParents:null,other:null,subtractWedding:true,subtractSetup:true,jIncome:null,dIncome:null,combineIncome:true,existingAnnual:0},
+  house:{mode:"jeonse",deposit:700000000,product:"seoul",seoulBase:3.95,bankRate:4.2,bankCap:444000000,buttimokRate:2.7,
+    price:1100000000,regulated:true,firstHome:true,area85:false,rate:4.3,years:30,stress:3.0,dsr:40,regFee:2000000},
+  loanSim:{auto:true,principal:null,rate:null,years:30,method:"equal",grace:0}};
+const ui=loadUI();
+let db=null,assets=null,downloads=null,mode="local";
+const pending=new Map();
+let drawer=null;
+
+function loadUI(){
+  const d={tab:"summary",sort:{},hall:{q:"",zone:"",gu:"",type:"",status:"",maxMeal:"",hideExcluded:true,src:""},vendor:{q:"",status:""},price:{q:"",only:""}};
+  try{const s=JSON.parse(localStorage.getItem("wl-ui")||"null"); if(s) return Object.assign(d,s,{hall:Object.assign(d.hall,s.hall||{}),vendor:Object.assign(d.vendor,s.vendor||{}),price:Object.assign(d.price,s.price||{})});}catch(e){}
+  return d;
+}
+function saveUI(){try{localStorage.setItem("wl-ui",JSON.stringify(ui));}catch(e){}}
+
+/* ================= utils ================= */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isNum=v=>typeof v==="number"&&isFinite(v);
+const won=n=>isNum(n)?Math.round(n).toLocaleString("ko-KR")+"원":"—";
+const man=n=>{ if(!isNum(n)) return "—"; const m=n/10000; return (Math.round(m*10)/10).toLocaleString("ko-KR")+"만"; };
+const manWon=n=>isNum(n)?Math.round(n/10000).toLocaleString("ko-KR")+"만 원":"—";
+function eok(n){ if(!isNum(n)) return "—"; const neg=n<0; n=Math.abs(n); const e=Math.floor(n/1e8), m=Math.round((n%1e8)/1e4); let t=e?e+"억":""; if(m) t+=(t?" ":"")+m.toLocaleString("ko-KR")+"만"; if(!t) t="0"; return (neg?"−":"")+t+" 원"; }
+const signed=n=>!isNum(n)?"—":(n>0?"+":n<0?"−":"±")+Math.abs(n/10000).toLocaleString("ko-KR")+"만";
+function clone(o){return JSON.parse(JSON.stringify(o==null?{}:o));}
+function deepMerge(t,p){for(const k in p){const v=p[k]; if(v&&typeof v==="object"&&!Array.isArray(v)){if(!t[k]||typeof t[k]!=="object"||Array.isArray(t[k]))t[k]={}; deepMerge(t[k],v);} else t[k]=v;} return t;}
+function S(){ return deepMerge(clone(DEF_SETTINGS),clone(state.settings)); }
+function avg(scores,kind){const ks=SCORE[kind].map(s=>s[0]); const v=ks.map(k=>scores&&scores[k]).filter(isNum); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
+function list(col){return Object.entries(state[col]).map(([id,d])=>Object.assign({id},d));}
+function newId(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function photoSrc(d){return d.photo?"/_blob/"+d.photo:(d.photoData||"");}
+function blogLink(name){return "https://search.naver.com/search.naver?where=blog&query="+encodeURIComponent(name+" 후기");}
+function naverQ(q){return "https://search.naver.com/search.naver?query="+encodeURIComponent(q);}
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+function setSync(t){$("#sync").textContent=t;}
+function getPath(o,p){return p.split(".").reduce((a,k)=>a==null?undefined:a[k],o);}
+function pathObj(p,v){const ks=p.split("."); const o={}; let c=o; ks.forEach((k,i)=>{ if(i===ks.length-1) c[k]=v; else {c[k]={}; c=c[k];} }); return o;}
+
+/* ================= storage ================= */
+function saveLocal(){try{localStorage.setItem("wl-data",JSON.stringify(state));}catch(e){toast("이 기기 저장 공간이 가득 찼어요");}}
+function loadLocal(){try{const s=JSON.parse(localStorage.getItem("wl-data")||"null"); if(s){COLS.forEach(c=>state[c]=s[c]||{}); state.settings=s.settings||{};}}catch(e){}}
+function write(col,id,patch,quiet){
+  if(col==="settings"){deepMerge(state.settings,patch);} else {state[col][id]=deepMerge(state[col][id]||{},patch);}
+  if(!quiet) schedule();
+  if(mode==="local"){saveLocal();return;}
+  const key=col+"/"+id; const p=pending.get(key)||{patch:{},timer:null,busy:false};
+  deepMerge(p.patch,patch); clearTimeout(p.timer); p.timer=setTimeout(()=>flush(col,id),450); pending.set(key,p);
+  setSync("저장 중…");
+}
+async function flush(col,id){
+  const key=col+"/"+id; const p=pending.get(key); if(!p) return;
+  if(p.busy){p.timer=setTimeout(()=>flush(col,id),300);return;}
+  const patch=p.patch; p.patch={}; p.busy=true;
+  const ref=db.doc(col==="settings"?"settings/main":col+"/"+id);
+  try{ await ref.update(patch); }
+  catch(e){
+    if(e&&e.code==="invalid_argument"){ try{ await ref.set(clone(col==="settings"?state.settings:state[col][id])); }catch(e2){ toast("저장하지 못했어요. 권한을 확인해 주세요"); } }
+    else if(e&&e.code==="unavailable"){ deepMerge(p.patch,patch); }
+    else toast("저장하지 못했어요 ("+(e&&e.code||"오류")+")");
+  }
+  p.busy=false;
+  if(Object.keys(p.patch).length){p.timer=setTimeout(()=>flush(col,id),400);} else {pending.delete(key); if(!pending.size) setSync("저장됨");}
+}
+async function create(col,data){
+  const id=newId(col[0]); state[col][id]=data; schedule();
+  if(mode==="local"){saveLocal();return id;}
+  try{ await db.doc(col+"/"+id).set(clone(data)); setSync("저장됨"); }catch(e){ toast(e&&e.code==="quota_exceeded"?"저장 한도에 도달했어요":"추가하지 못했어요"); }
+  return id;
+}
+async function removeDoc(col,id){
+  delete state[col][id]; schedule();
+  if(mode==="local"){saveLocal();return;}
+  try{ await db.doc(col+"/"+id).delete(); }catch(e){ toast("삭제하지 못했어요"); }
+}
+async function initStore(){
+  const use=window.claude&&typeof window.claude.use==="function"?n=>window.claude.use(n).catch(()=>null):async()=>null;
+  const [d,a,dl]=await Promise.all([use("db"),use("assets"),use("downloads")]);
+  assets=a; downloads=dl;
+  $("#exportBtn").hidden=!(downloads&&window.XLSX);
+  if(!d){ mode="local"; loadLocal(); setSync("이 기기에만 저장"); schedule(); return; }
+  db=d; mode="db"; setSync("동기화됨");
+  COLS.forEach(c=>{
+    db.collection(c).onSnapshot(snap=>{
+      const next={}; snap.docs.forEach(doc=>{ if(doc.exists) next[doc.id]=clone(doc.data()); });
+      pending.forEach((p,key)=>{ const i=key.indexOf("/"); const pc=key.slice(0,i), pid=key.slice(i+1); if(pc===c&&next[pid]) deepMerge(next[pid],p.patch); });
+      state[c]=next; schedule();
+    },()=>setSync("연결 끊김 — 새로고침 필요"));
+  });
+  db.doc("settings/main").onSnapshot(s=>{ if(s.exists){ state.settings=clone(s.data()); const p=pending.get("settings/main"); if(p) deepMerge(state.settings,p.patch); schedule(); } },()=>{});
+}
+
+/* ================= render loop ================= */
+let raf=0;
+function schedule(){ if(raf) return; raf=requestAnimationFrame(()=>{raf=0; render();}); }
+function render(){
+  const act=document.activeElement;
+  if(act&&act.closest&&act.closest("#main")&&((act.tagName==="INPUT"&&act.type!=="checkbox")||act.tagName==="TEXTAREA")){
+    if(!act._deferred){ act._deferred=true; act.addEventListener("blur",()=>{act._deferred=false; schedule();},{once:true}); }
+    return;
+  }
+  renderHead(); renderTabs(); const m=$("#main"); const t=ui.tab;
+  m.innerHTML = t==="summary"?viewSummary(): t==="budget"?viewBudget(): t==="planner"?viewPlanner(): t==="hall"?viewHalls(): t==="board"?viewBoard(): t==="house"?viewHouse(): t==="dprice"?viewDressPrices(): viewVendors(t);
+  bindMain();
+}
+function renderHead(){
+  const s=S(); let dd="";
+  if(s.weddingDate){ const d=Math.ceil((new Date(s.weddingDate+"T00:00:00")-new Date(new Date().toDateString()))/864e5); dd=`<span class="dday">${d>0?"D-"+d:d===0?"D-DAY":"D+"+(-d)}</span>`; }
+  $("#dday").innerHTML=dd;
+}
+function renderTabs(){
+  const vc=c=>list("vendors").filter(v=>v.cat===c).length;
+  const c={planner:list("planners").length,studio:vc("studio"),dress:vc("dress"),makeup:vc("makeup"),hall:list("halls").length,board:list("dresses").length,house:list("homes").length,budget:list("budget").length,dprice:Object.keys(dressPriceIndex().by).length};
+  $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" aria-selected="${ui.tab===t.id}" data-tab="${t.id}">${t.label}${c[t.id]!=null?`<span class="count">${c[t.id]}</span>`:""}</button>`).join("");
+}
+
+/* ================= calculations ================= */
+function mainQuote(){ const s=state.settings; return state.quotes[s.mainQuote]||Object.values(state.quotes)[0]||null; }
+function quoteTotal(q){
+  if(!q) return null;
+  const base=(q.items||[]).filter(i=>i.count!==false).reduce((a,i)=>a+(isNum(i.sale)?i.sale:0),0);
+  let delta=0; const o=q.options||{}, s=q.selected||{};
+  ["studio","dress","makeup"].forEach(k=>{const opt=(o[k]||[])[s[k]||0]; if(opt&&isNum(opt.delta)) delta+=opt.delta;});
+  return {base,delta,total:base+delta};
+}
+function extrasTotal(){ return list("extras").filter(x=>x.include&&isNum(x.amount)).reduce((a,x)=>a+x.amount,0); }
+function hallMeal(h){ return isNum(h.mealMin)&&isNum(h.mealMax)?(h.mealMin+h.mealMax)/2:(isNum(h.mealMin)?h.mealMin:(isNum(h.mealMax)?h.mealMax:null)); }
+function hallEstimate(h,guests){
+  const g=Math.max(guests||0,h.minGuests||0); const meal=hallMeal(h); if(meal==null) return null;
+  return meal*g+(isNum(h.rental)?h.rental:0)+(isNum(h.flowerFee)?h.flowerFee:0)+(isNum(h.productionFee)?h.productionFee:0)+(isNum(h.snapFee)?h.snapFee:0);
+}
+/* ---- house finance ---- */
+function acqTax(price,area85,firstHome){
+  let r; const e=price/1e8;
+  if(price<=6e8) r=0.01; else if(price<=9e8) r=(e*2/3-3)/100; else r=0.03;
+  let edu=r*0.1; let farm=area85?0.002:0;
+  let tax=price*(r+edu+farm);
+  if(firstHome&&price<=12e8) tax=Math.max(0,tax-2000000);
+  return tax;
+}
+function brokerage(price,kind){
+  let r,cap=Infinity;
+  if(kind==="buy"){ if(price<5e7){r=.006;cap=25e4;} else if(price<2e8){r=.005;cap=8e5;} else if(price<9e8) r=.004; else if(price<12e8) r=.005; else if(price<15e8) r=.006; else r=.007; }
+  else { if(price<5e7){r=.005;cap=2e5;} else if(price<1e8){r=.004;cap=3e5;} else if(price<6e8) r=.003; else if(price<12e8) r=.004; else if(price<15e8) r=.005; else r=.006; }
+  return Math.min(price*r,cap);
+}
+function pmtFactor(ratePct,years){ const r=ratePct/100/12, n=years*12; return r===0?1/n:r/(1-Math.pow(1+r,-n)); }
+function incomeFor(s){ const f=s.fin; return (f.jIncome||0)+(f.combineIncome?(f.dIncome||0):0); }
+function weddingCost(){ const b=budgetCalc(); return b.wedding; }
+function setupCost(){ const b=budgetCalc(); return b.houseSetup; }
+function equity(s){
+  const f=s.fin; const base=(f.jAsset||0)+(f.dAsset||0)+(f.jParents||0)+(f.dParents||0)+(f.other||0);
+  const wc=f.subtractWedding?Math.max(0,weddingCost()-(isNum(s.giftIncome)?s.giftIncome:0)):0;
+  const sc=f.subtractSetup?setupCost():0;
+  return {base,wc,sc,avail:base-wc-sc};
+}
+function buyLimit(price,s){
+  const h=s.house; const ltvRate=h.firstHome?0.7:(h.regulated?0.4:0.7);
+  const ltv=price*ltvRate;
+  const cap=h.regulated?(price<=15e8?6e8:price<=25e8?4e8:2e8):Infinity;
+  const annual=incomeFor(s)*(h.dsr/100)-(s.fin.existingAnnual||0);
+  const dsr=annual>0?(annual/12)/pmtFactor(h.rate+h.stress,h.years):0;
+  const lim=Math.max(0,Math.min(ltv,cap,dsr));
+  const bind=lim===dsr?"DSR (소득)":lim===cap?"주택가격별 한도":"LTV";
+  return {ltv,ltvRate,cap,dsr,lim,bind};
+}
+function buyCalc(price,s){
+  const h=s.house; const L=buyLimit(price,s);
+  const tax=acqTax(price,h.area85,h.firstHome), fee=brokerage(price,"buy"), reg=h.regFee||0;
+  const cashNeed=price+tax+fee+reg-L.lim; const eq=equity(s);
+  return {price,L,tax,fee,reg,cost:tax+fee+reg,cashNeed,eq,gap:eq.avail-cashNeed,monthly:L.lim*pmtFactor(h.rate,h.years)};
+}
+function maxBuyPrice(s){
+  let lo=1e8,hi=40e8; if(buyCalc(lo,s).gap<0) return null;
+  for(let i=0;i<40;i++){ const mid=(lo+hi)/2; if(buyCalc(mid,s).gap>=0) lo=mid; else hi=mid; }
+  return Math.floor(lo/1e6)*1e6;
+}
+function jeonseProducts(dep,s){
+  const h=s.house; const inc=(s.fin.jIncome||0)+(s.fin.dIncome||0);
+  const tier=inc<=3e7?3.0:inc<=6e7?2.5:inc<=9e7?2.0:inc<=11e7?1.5:inc<=13e7?1.0:0;
+  const seoulSub=tier+(tier>0?0.2:0);
+  return {
+    seoul:{label:"서울시 신혼부부 임차보증금 이자지원",ok:dep<=7e8&&inc<=13e7,why:dep>7e8?"보증금 7억 초과":inc>13e7?"부부합산 소득 1.3억 초과":"",cap:Math.min(3e8,dep*0.9),rate:Math.max(0,h.seoulBase-seoulSub),note:`대출금리 ${h.seoulBase}% − 서울시 지원 ${seoulSub.toFixed(1)}%p (소득 구간 ${tier}%p + 예비신혼 0.2%p)`},
+    buttimok:{label:"신혼부부 전용 버팀목",ok:dep<=4e8&&inc<=75e6,why:dep>4e8?"수도권 보증금 4억 초과":inc>75e6?"부부합산 소득 7,500만 초과":"",cap:Math.min(3e8,dep*0.8),rate:h.buttimokRate,note:"소득·보증금 구간별 연 1.5~2.7%"},
+    bank:{label:"시중은행 전세대출 (HF 보증)",ok:true,why:"",cap:Math.min(h.bankCap,dep*0.8),rate:h.bankRate,note:"보증금 80% 이내, 한도는 은행·보증기관별 상이"}
+  };
+}
+function jeonseCalc(dep,s){
+  const P=jeonseProducts(dep,s); const pk=P[s.house.product]&&P[s.house.product].ok?s.house.product:(P.seoul.ok?"seoul":P.buttimok.ok?"buttimok":"bank");
+  const p=P[pk]; const eq=equity(s); const fee=brokerage(dep,"lease");
+  const needLoan=Math.max(0,dep+fee-eq.avail); const loan=Math.min(needLoan,p.cap);
+  const gap=eq.avail+p.cap-dep-fee;
+  return {dep,P,pk,p,fee,cost:fee,eq,needLoan,loan,gap,monthlyInterest:loan*p.rate/100/12};
+}
+function houseCosts(){ const s=S(), h=s.house; return h.mode==="buy"?acqTax(h.price,h.area85,h.firstHome)+brokerage(h.price,"buy")+(h.regFee||0):brokerage(h.deposit,"lease"); }
+function amort(P,rate,years,method,grace){
+  const r=rate/100/12, n=Math.max(1,Math.round(years*12)); const g=method==="bullet"?0:Math.min(Math.round((grace||0)*12),n-1);
+  let bal=P,total=0,first=null,after=null; const yearly=[]; const k=n-g; const pay=r===0?P/k:P*r/(1-Math.pow(1+r,-k));
+  for(let m=1;m<=n;m++){
+    const int=bal*r; let prin;
+    if(method==="bullet") prin=m===n?bal:0; else if(m<=g) prin=0; else if(method==="equal") prin=pay-int; else prin=P/k;
+    prin=Math.min(prin,bal); bal-=prin; total+=int;
+    if(m===1) first=method==="bullet"?int:int+prin;
+    if(g>0&&m===g+1) after=int+prin;
+    if(m%12===0||(m===n&&n%12!==0)) yearly.push(Math.max(0,bal));
+  }
+  return {first,afterGrace:after,total,yearly};
+}
+/* ---- budget ---- */
+function linkedAmount(it){
+  if(it.link==="hall"){ const s=S(); const h=state.halls[s.mainHall]; return h?hallEstimate(h,s.guests):null; }
+  if(it.link==="sdm"){ const q=quoteTotal(mainQuote()); return q?q.total:null; }
+  if(it.link==="sdmExtras") return extrasTotal();
+  if(it.link==="houseCosts") return houseCosts();
+  return null;
+}
+function itemEff(it){
+  if(it.subs&&it.subs.length){
+    const any=it.subs.some(x=>isNum(x.amount)||isNum(x.cap));
+    const sum=it.subs.reduce((a,x)=>a+(isNum(x.amount)?x.amount:(isNum(x.cap)?x.cap:0)),0);
+    const amt=it.subs.some(x=>isNum(x.amount))?it.subs.reduce((a,x)=>a+(isNum(x.amount)?x.amount:0),0):null;
+    return {amount:amt,eff:any?sum:(isNum(it.cap)?it.cap:0),auto:false,fromCap:!it.subs.some(x=>isNum(x.amount))};
+  }
+  if(it.link){ const a=linkedAmount(it); return {amount:a,eff:isNum(a)?a:(isNum(it.cap)?it.cap:0),auto:true,fromCap:!isNum(a)}; }
+  return {amount:it.amount,eff:isNum(it.amount)?it.amount:(isNum(it.cap)?it.cap:0),auto:false,fromCap:!isNum(it.amount)};
+}
+function budgetCalc(){
+  const items=list("budget").sort((a,b)=>(a.order||0)-(b.order||0));
+  const groups={}; let wedding=0,houseSetup=0,confirmed=0,paid=0,capless=[]; const payer={};
+  items.forEach(it=>{
+    const e=itemEff(it); it._e=e;
+    (groups[it.group]=groups[it.group]||{items:[],total:0}); groups[it.group].items.push(it); groups[it.group].total+=e.eff;
+    const inWedding=it.group!==HOUSE_GROUP;
+    if(inWedding) wedding+=e.eff; else if(it.link!=="houseCosts") houseSetup+=e.eff;
+    if(it.status==="확정"||it.status==="지불 완료") confirmed+=e.eff;
+    if(it.status==="지불 완료") paid+=e.eff;
+    payer[it.payer||"공동"]=(payer[it.payer||"공동"]||0)+(inWedding?e.eff:0);
+    if(e.eff===0&&!e.auto) capless.push(it);
+  });
+  return {items,groups,wedding,houseSetup,confirmed,paid,payer,capless};
+}
+
+/* ================= shared view helpers ================= */
+function scoreSelect(col,id,kind,key,val){
+  return `<select class="score" aria-label="${esc(SCORE[kind].find(s=>s[0]===key)[1])} 점수" data-act="score" data-col="${col}" data-id="${id}" data-key="${key}"><option value=""></option>${[1,2,3,4,5].map(n=>`<option ${val===n?"selected":""}>${n}</option>`).join("")}</select>`;
+}
+function statusSelect(col,id,val,opts){
+  return `<select class="st st-${esc(val)}" data-act="status" data-col="${col}" data-id="${id}" aria-label="상태">${opts.map(o=>`<option ${o===val?"selected":""}>${o}</option>`).join("")}</select>`;
+}
+function avgCell(a){ return a==null?`<span class="muted">—</span>`:`<span class="avg">${a.toFixed(1)}<span class="bar"><i style="width:${a/5*100}%"></i></span></span>`; }
+function sortRows(rows,tabKey,getters){
+  const s=ui.sort[tabKey]; if(!s) return rows; const g=getters[s.key]; if(!g) return rows; const dir=s.dir==="asc"?1:-1;
+  return rows.slice().sort((a,b)=>{const x=g(a),y=g(b); if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1; return (x>y?1:x<y?-1:0)*dir;});
+}
+function th(tabKey,key,label,cls){ const s=ui.sort[tabKey]; const dir=s&&s.key===key?s.dir:""; return `<th data-sort="${key}" data-tabkey="${tabKey}" ${dir?`data-dir="${dir}"`:""} class="${cls||""}">${label}</th>`; }
+function manInput(path,val,label,hint){ return `<label>${label}<input type="number" inputmode="decimal" step="any" data-set="${path}" data-unit="10000" value="${isNum(val)?+(val/10000).toFixed(2):""}" placeholder="만원"><span class="hint" data-hint="${path}">${isNum(val)?eok(val):(hint||"")}</span></label>`; }
+function numInput(path,val,label,unit,step){ return `<label>${label}<input type="number" inputmode="decimal" step="${step||"any"}" data-set="${path}" value="${isNum(val)?val:""}" placeholder="${unit||""}"><span class="hint">${unit||""}</span></label>`; }
+function chkInput(path,val,label){ return `<label class="chk"><input type="checkbox" data-set="${path}" ${val?"checked":""}> ${label}</label>`; }
+
+/* ================= SUMMARY ================= */
+function viewSummary(){
+  const s=S(), B=budgetCalc(); const target=s.target||0;
+  const gift=isNum(s.giftIncome)?s.giftIncome:0;
+  const pct=target?Math.min(100,B.wedding/target*100):0; const over=target&&B.wedding>target;
+  const maxG=Math.max(1,...WEDDING_GROUPS.map(g=>(B.groups[g]||{total:0}).total));
+  const q=mainQuote(), qt=quoteTotal(q), mh=state.halls[s.mainHall];
+  const top=(rows,kind,n=3)=>rows.filter(r=>r.status!=="제외").map(r=>Object.assign(r,{_a:avg(r.scores,kind)})).filter(r=>r._a!=null).sort((a,b)=>b._a-a._a).slice(0,n);
+  const pickBox=(title,rows,kind,col,tab)=>{const t=top(rows,kind); return `<div class="pick"><h3>${title}</h3>${t.length?`<ol>${t.map(r=>`<li><button data-open="${col}" data-id="${r.id}">${esc(r.name)}</button> <span class="muted small">${r._a.toFixed(1)}</span></li>`).join("")}</ol>`:`<div class="muted small">아직 점수가 없어요. <button class="btn small" data-tab="${tab}">점수 매기기</button></div>`}</div>`;};
+  const hc=houseSummary(s);
+  const payerRows=PAYERS.filter(p=>B.payer[p]).map(p=>`<div class="row"><span class="k">${p}</span><b>${manWon(B.payer[p])}</b></div>`).join("");
+  return `
+  <section class="ledger">
+    <div class="panel">
+      <div class="muted small">결혼식 비용 예상 (신혼집 제외)</div>
+      <div class="total">${Math.round(B.wedding/10000).toLocaleString("ko-KR")}<small>만 원</small></div>
+      <div class="progress ${over?"over":""}"><i style="width:${pct}%"></i></div>
+      <div class="small ${over?"no":"muted"}">목표 ${manWon(target)} ${target?(over?`· ${manWon(B.wedding-target)} 초과`:`· ${manWon(target-B.wedding)} 남음`):""}</div>
+      <div class="lines" style="margin-top:12px">
+        <div class="row"><span class="k">확정·지불 완료</span><b>${manWon(B.confirmed)}</b></div>
+        <div class="row"><span class="k">지불 완료</span><b>${manWon(B.paid)}</b></div>
+        <div class="row"><span class="k">예상 축의금</span><b>${gift?"− "+manWon(gift):"—"}</b></div>
+        <div class="row"><span class="k">축의금 뺀 실부담</span><b>${manWon(B.wedding-gift)}</b></div>
+        <div class="row"><span class="k">신혼집 세팅 (가전·가구·이사 등)</span><b>${manWon(B.houseSetup)}</b></div>
+      </div>
+      <div class="formgrid" style="margin-top:14px">
+        ${manInput("target",s.target,"결혼식 예산 목표")}
+        ${manInput("giftIncome",s.giftIncome,"예상 축의금","모르면 비워두기")}
+        <label>예식일<input type="date" data-set="weddingDate" value="${esc(s.weddingDate)}"><span class="hint">입력하면 D-day가 떠요</span></label>
+      </div>
+    </div>
+    <div>
+      <h2>어디에 쓰이나</h2>
+      <p class="lead">금액을 모르는 항목은 상한선이 대신 들어가요. 웨딩홀·스드메는 선택한 홀과 견적 라인업에 따라 자동으로 바뀌어요.</p>
+      <div class="gbars">${WEDDING_GROUPS.map(g=>{const t=(B.groups[g]||{total:0}).total; return `<div class="gbar"><span>${g}</span><span class="track"><i style="width:${t/maxG*100}%"></i></span><b>${manWon(t)}</b></div>`;}).join("")}</div>
+      <div class="cards" style="margin-top:16px">
+        <div class="stat"><div class="k">웨딩홀${mh?` · ${esc(mh.name)}`:""}</div><div class="v">${mh&&hallEstimate(mh,s.guests)!=null?manWon(hallEstimate(mh,s.guests)):"—"}</div><div class="s">${mh?`하객 ${s.guests}명 기준`:`<button class="linkbtn" data-tab="hall">기준 홀 고르기</button>`}</div></div>
+        <div class="stat"><div class="k">스드메 (라인업 반영)</div><div class="v">${qt?manWon(qt.total):"—"}</div><div class="s">추가비용 체크분 ${manWon(extrasTotal())}</div></div>
+        <div class="stat"><div class="k">신혼집 · ${s.house.mode==="buy"?"매매":"전세"}</div><div class="v ${hc.gap<0?"bad":"good"}">${hc.gap<0?"부족 "+eok(-hc.gap):"여유 "+eok(hc.gap)}</div><div class="s">${esc(hc.line)} <button class="linkbtn" data-tab="house">자세히</button></div></div>
+      </div>
+      ${B.capless.length?`<div class="note small"><b>상한선이 비어 있는 항목 ${B.capless.length}개</b> — 합계에 0원으로 들어가 있어요: ${B.capless.slice(0,8).map(i=>esc(i.name.replace(/\s*\(.*\)/,""))).join(", ")}${B.capless.length>8?" 외":""} <button class="linkbtn" data-tab="budget">상한선 정하기</button></div>`:""}
+      ${payerRows?`<h3 style="margin-top:16px">누가 내나</h3><div class="lines">${payerRows}</div>`:""}
+    </div>
+  </section>
+  <section class="section"><h2>점수 상위</h2><div class="picks" style="margin-top:8px">
+    ${pickBox("플래너",list("planners"),"planner","planners","planner")}
+    ${pickBox("스튜디오",list("vendors").filter(v=>v.cat==="studio"),"studio","vendors","studio")}
+    ${pickBox("드레스",list("vendors").filter(v=>v.cat==="dress"),"dress","vendors","dress")}
+    ${pickBox("메이크업",list("vendors").filter(v=>v.cat==="makeup"),"makeup","vendors","makeup")}
+    ${pickBox("웨딩홀",list("halls"),"hall","halls","hall")}
+    ${pickBox("신혼집 후보",list("homes"),"home","homes","house")}
+  </div></section>`;
+}
+function houseSummary(s){
+  if(s.house.mode==="buy"){ const c=buyCalc(s.house.price,s); return {gap:c.gap,line:`${eok(s.house.price)} 기준, 대출 ${eok(c.L.lim)}`}; }
+  const c=jeonseCalc(s.house.deposit,s); return {gap:c.gap,line:`보증금 ${eok(s.house.deposit)}, ${c.P[c.pk].label.replace(/\s*\(.*\)/,"")}`};
+}
+
+/* ================= BUDGET ================= */
+function viewBudget(){
+  const s=S(), B=budgetCalc();
+  const groupsOrder=[...WEDDING_GROUPS.slice(0,4),"신혼여행",HOUSE_GROUP,"관리","기타"];
+  const gsec=g=>{
+    const G=B.groups[g]; if(!G) return "";
+    const rows=G.items.map(it=>{
+      const e=it._e; const over=isNum(it.cap)&&isNum(e.amount)&&e.amount>it.cap;
+      const amtCell=e.auto?`<span class="auto">${isNum(e.amount)?man(e.amount):"—"}</span> <button class="linkbtn" data-tab="${it.link==="hall"?"hall":it.link==="houseCosts"?"house":"planner"}">바꾸기</button>`
+        :(it.subs?`<span>${isNum(e.amount)?man(e.amount):"—"}</span>`:`<input class="cell" type="number" step="any" data-b="amount" data-id="${it.id}" value="${isNum(it.amount)?+(it.amount/10000).toFixed(1):""}" aria-label="${esc(it.name)} 금액(만원)">`);
+      const main=`<tr>
+        <td class="wrap" style="min-width:200px"><b>${esc(it.name)}</b>${it.link?` <span class="pill">자동</span>`:""}${it.subs?` <button class="linkbtn" data-act="subToggle" data-id="${it.id}">${ui.open&&ui.open[it.id]?"세부 접기":"세부 "+it.subs.length+"개"}</button>`:""}${it.meta?`<div class="small muted">${esc([it.meta.destination,it.meta.nights].filter(Boolean).join(" · "))}</div>`:""}</td>
+        <td><select data-b="status" data-id="${it.id}" aria-label="상태">${B_STATUS.map(x=>`<option ${x===it.status?"selected":""}>${x}</option>`).join("")}</select></td>
+        <td class="num">${amtCell}</td>
+        <td class="num"><input class="cell" type="number" step="any" data-b="cap" data-id="${it.id}" value="${isNum(it.cap)?+(it.cap/10000).toFixed(1):""}" aria-label="${esc(it.name)} 상한선(만원)" placeholder="상한">${over?`<span class="overcap">상한 ${man(e.amount-it.cap)} 초과</span>`:""}</td>
+        <td class="num"><b data-eff="${it.id}">${man(e.eff)}</b>${e.fromCap&&e.eff?`<br><span class="unit">상한 기준</span>`:""}</td>
+        <td><select data-b="payer" data-id="${it.id}" aria-label="부담">${PAYERS.map(x=>`<option ${x===(it.payer||"공동")?"selected":""}>${x}</option>`).join("")}</select></td>
+        <td><input class="cell memo" data-b="memo" data-id="${it.id}" value="${esc(it.memo)}" aria-label="메모" placeholder="메모"></td>
+      </tr>`;
+      const subs=it.subs&&ui.open&&ui.open[it.id]?it.subs.map((x,i)=>`<tr class="sub">
+        <td><input class="cell memo" data-sub="${i}" data-key="name" data-id="${it.id}" value="${esc(x.name)}" aria-label="세부 항목명"></td><td></td>
+        <td class="num"><input class="cell" type="number" step="any" data-sub="${i}" data-key="amount" data-id="${it.id}" value="${isNum(x.amount)?+(x.amount/10000).toFixed(1):""}" placeholder="금액"></td>
+        <td class="num"><input class="cell" type="number" step="any" data-sub="${i}" data-key="cap" data-id="${it.id}" value="${isNum(x.cap)?+(x.cap/10000).toFixed(1):""}" placeholder="상한"></td>
+        <td class="num" data-subeff="${it.id}:${i}">${man(isNum(x.amount)?x.amount:(isNum(x.cap)?x.cap:0))}</td>
+        <td colspan="2"><button class="linkbtn" data-act="subDel" data-id="${it.id}" data-i="${i}">삭제</button></td></tr>`).join("")+
+        `<tr class="sub"><td colspan="7"><button class="btn small" data-act="subAdd" data-id="${it.id}">세부 항목 추가</button>${it.meta?` <label class="small muted" style="margin-left:10px">여행지 <input class="cell memo" data-meta="destination" data-id="${it.id}" value="${esc(it.meta.destination)}"></label> <label class="small muted">일정 <input class="cell memo" style="width:110px" data-meta="nights" data-id="${it.id}" value="${esc(it.meta.nights)}" placeholder="예: 6박 8일"></label>`:""}</td></tr>`:"";
+      return main+subs;
+    }).join("");
+    return `<div class="bgroup"><div class="bgroup-head"><h3>${g}</h3><span class="gt" data-gt="${esc(g)}">${manWon(G.total)}</span></div>
+      <div class="tablebox"><table class="sheet"><thead><tr><th>항목</th><th>상태</th><th>금액 <span class="unit">만원</span></th><th>상한선 <span class="unit">만원</span></th><th>반영액</th><th>부담</th><th>메모</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="margin-top:6px"><button class="btn small ghost" data-act="bAdd" data-group="${esc(g)}">${g}에 항목 추가</button></div></div>`;
+  };
+  return `
+  <div class="budget-bar"><div><div class="muted small">결혼식 비용 예상</div><span class="big" id="bTotal">${manWon(B.wedding)}</span></div>
+    <div><div class="muted small">목표</div><b>${manWon(s.target)}</b></div>
+    <div><div class="muted small">${B.wedding>s.target?"초과":"남은 여유"}</div><b class="${B.wedding>s.target?"no":"ok"}" id="bLeft">${manWon(Math.abs(s.target-B.wedding))}</b></div>
+    <div><div class="muted small">신혼집 세팅</div><b id="bHouse">${manWon(B.houseSetup)}</b></div></div>
+  <p class="lead">금액은 만원 단위로 적어요. 아직 모르는 항목은 <b>상한선</b>만 적어두면 그 금액이 합계에 들어가요. <span class="pill">자동</span> 항목은 웨딩홀·스드메·신혼집 탭에서 고른 대로 바뀌어요. 청모와 신혼여행은 세부 항목을 펼쳐서 적을 수 있어요.</p>
+  ${groupsOrder.map(gsec).join("")}`;
+}
+
+/* ================= PLANNER / QUOTE ================= */
+function viewPlanner(){
+  const rows=sortRows(list("planners"),"planner",{name:r=>r.name,kind:r=>r.kind,avg:r=>avg(r.scores,"planner"),status:r=>rank(r.status)});
+  const q=mainQuote();
+  return `
+  <h2>플래너</h2>
+  <p class="lead">업체명을 누르면 연락처, 혜택, 메모를 모두 편집할 수 있어요.</p>
+  <div class="filters"><span class="spacer"></span><button class="btn" data-act="add" data-col="planners">플래너 추가</button></div>
+  <div class="tablebox"><table class="sheet"><thead><tr>
+    ${th("planner","name","플래너")}${th("planner","kind","유형")}<th>담당·연락처</th><th>특징</th><th>혜택</th>
+    ${SCORE.planner.map(s=>`<th class="sc">${s[1]}</th>`).join("")}${th("planner","avg","평균","sc")}${th("planner","status","상태")}<th>링크</th><th>메모</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr>
+    <td class="name"><button data-open="planners" data-id="${r.id}">${esc(r.name)}</button></td>
+    <td>${esc(r.kind)}</td>
+    <td class="small">${esc(r.manager)}${r.phone?`<br><span class="muted">${esc(r.phone)}</span>`:""}</td>
+    <td class="wrap small">${esc(r.features)}</td><td class="wrap small">${esc(r.benefits)}</td>
+    ${SCORE.planner.map(s=>`<td>${scoreSelect("planners",r.id,"planner",s[0],r.scores&&r.scores[s[0]])}</td>`).join("")}
+    <td>${avgCell(avg(r.scores,"planner"))}</td><td>${statusSelect("planners",r.id,r.status,V_STATUS)}</td>
+    <td class="links">${r.insta?`<a href="${esc(r.insta)}" target="_blank" rel="noopener">인스타</a>`:""}${r.blog?`<a href="${esc(r.blog)}" target="_blank" rel="noopener">사이트</a>`:""}<a href="${blogLink(r.name)}" target="_blank" rel="noopener">블로그 후기</a></td>
+    <td class="wrap small">${esc(r.memo)}</td></tr>`).join("")}
+  </tbody></table></div>
+  ${q?viewQuote(q):""}`;
+}
+function viewQuote(q){
+  const qid=Object.keys(state.quotes).find(k=>state.quotes[k]===q);
+  const qt=quoteTotal(q); const o=q.options||{}, s=q.selected||{};
+  const extras=list("extras").sort((a,b)=>(a.order||0)-(b.order||0)); const ex=extrasTotal();
+  const sel=(k,label)=>`<label>${label}<select data-act="qsel" data-id="${qid}" data-key="${k}">${(o[k]||[]).map((op,i)=>`<option value="${i}" ${(s[k]||0)===i?"selected":""}>${esc(op.name)} ${op.delta?`(${signed(op.delta)})`:"(기준)"}</option>`).join("")}</select></label>`;
+  return `
+  <section class="panel" style="margin-top:22px">
+    <div class="quote-head"><div><h2>${esc(q.title||"견적")}</h2><div class="muted small">계약일 ${esc(q.contractDate||"")} · ${esc(q.manager||"")}</div></div>
+      <dl class="kv"><dt>계약 총액</dt><dd><b>${won(q.contractTotal)}</b></dd><dt>계약금</dt><dd>${won(q.deposit)}</dd><dt>잔금</dt><dd>${esc(q.balance||"")}</dd></dl></div>
+    <div class="tablebox"><table class="sheet"><thead><tr><th>품목</th><th>업체</th><th>상품</th><th>판매가</th><th>할인가</th><th>합계 반영</th></tr></thead><tbody>
+      ${(q.items||[]).map(it=>`<tr><td>${esc(it.cat)}</td><td>${esc(it.vendor)}</td><td class="wrap">${esc(it.product)}</td><td class="num">${won(it.list)}</td><td class="num"><b>${won(it.sale)}</b></td><td>${it.count===false?`<span class="muted small">미반영 (피팅비 대납)</span>`:"반영"}</td></tr>`).join("")}
+    </tbody></table></div>
+    <h3 style="margin-top:18px">라인업 바꿔보기</h3>
+    <p class="muted small" style="margin:0">플래너가 제시한 대안 업체의 추가금을 반영해 총액을 다시 계산해요. 결과는 전체 예산의 스드메 항목에 바로 들어가요.</p>
+    <div class="sim">${sel("studio","스튜디오")}${sel("dress","드레스")}${sel("makeup","메이크업")}</div>
+    <div class="simtotal"><span class="muted">스드메 총액</span><span class="big">${qt?won(qt.total):"—"}</span><span class="small muted">계약 기준 ${won(qt&&qt.base)} ${qt&&qt.delta?signed(qt.delta):""}</span></div>
+    <div class="note small">${esc(q.notes||"")}</div>
+    <h3 style="margin-top:18px">계약서 밖에서 추가될 수 있는 비용</h3>
+    <p class="muted small" style="margin:0 0 8px">체크하고 예상 금액을 넣으면 전체 예산의 ‘스드메 추가비용’에 더해져요.</p>
+    <div class="tablebox extras"><table class="sheet"><thead><tr><th>반영</th><th>구분</th><th>항목</th><th>범위</th><th>예상 금액 (원)</th></tr></thead><tbody>
+      ${extras.map(x=>`<tr><td><input type="checkbox" aria-label="${esc(x.name)} 반영" data-act="exInc" data-id="${x.id}" ${x.include?"checked":""}></td><td>${esc(x.cat)}</td><td>${esc(x.name)}</td><td class="muted">${esc(x.range)}</td><td><input type="number" step="10000" min="0" data-act="exAmt" data-id="${x.id}" value="${isNum(x.amount)?x.amount:""}" aria-label="${esc(x.name)} 예상 금액"></td></tr>`).join("")}
+    </tbody><tfoot><tr><td colspan="4" style="text-align:right" class="muted">체크한 합계</td><td class="num"><b>${won(ex)}</b></td></tr></tfoot></table></div>
+    <div style="margin-top:10px"><button class="btn small" data-act="addExtra">항목 추가</button></div>
+  </section>`;
+}
+
+/* ================= VENDORS (+ dress price lists) ================= */
+function viewVendors(cat){
+  const kind=cat, label=CAT_LABEL[cat], f=ui.vendor;
+  let rows=list("vendors").filter(v=>v.cat===cat);
+  if(f.q) rows=rows.filter(r=>(r.name+" "+(r.features||"")+" "+(r.planner||"")+" "+(r.location||"")).toLowerCase().includes(f.q.toLowerCase()));
+  if(f.status) rows=rows.filter(r=>r.status===f.status);
+  rows=sortRows(rows,cat,{name:r=>r.name,price:r=>r.price,list:r=>r.listPrice,delta:r=>r.quoteDelta,avg:r=>avg(r.scores,kind),status:r=>rank(r.status),planner:r=>r.planner});
+  return `
+  <h2>${label}</h2>
+  <p class="lead">대표 사진은 인스타그램 캡처를 사진 칸에 올려 두면 돼요. 블로그 링크는 네이버 블로그 검색으로 열려요.</p>${cat==="dress"&&list("priceLists").length?`<div class="note small">플래너 3곳(제이웨딩·다이렉트·베리굿) 드레스 견적 엑셀은 <button class="linkbtn" data-tab="dprice">드레스 견적 비교</button> 탭에 정리돼 있어요.</div>`:""}
+  <div class="filters">
+    <input type="search" placeholder="업체·특징·위치 검색" value="${esc(f.q)}" data-filter="vendor.q" aria-label="검색">
+    <select data-filter="vendor.status" aria-label="상태 필터"><option value="">모든 상태</option>${V_STATUS.map(s=>`<option ${f.status===s?"selected":""}>${s}</option>`).join("")}</select>
+    <span class="spacer"></span><button class="btn" data-act="add" data-col="vendors" data-cat="${cat}">${label} 추가</button>
+  </div>
+  ${rows.length?`<div class="tablebox"><table class="sheet"><thead><tr>
+    <th>사진</th>${th(cat,"name","업체")}${th(cat,"planner","제휴 플래너")}<th>특징</th><th>위치</th>${th(cat,"price","견적가")}${th(cat,"list","정가")}${th(cat,"delta","견적 대비")}<th>추가금·조건</th>
+    ${SCORE[kind].map(s=>`<th class="sc">${s[1]}</th>`).join("")}${th(cat,"avg","평균","sc")}${th(cat,"status","상태")}<th>링크</th><th>메모</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr>
+    <td>${photoSrc(r)?`<img class="thumb" src="${esc(photoSrc(r))}" alt="${esc(r.name)} 대표 사진">`:`<button class="thumb empty" data-act="photo" data-col="vendors" data-id="${r.id}" aria-label="${esc(r.name)} 사진 올리기">사진</button>`}</td>
+    <td class="name"><button data-open="vendors" data-id="${r.id}">${esc(r.name)}</button></td>
+    <td class="small">${esc(r.planner)}</td><td class="wrap small">${esc(r.features)}</td>
+    <td class="wrap small" style="min-width:140px">${esc(r.location)}</td>
+    <td class="num">${isNum(r.price)?`<b>${won(r.price)}</b>`:"—"}</td>
+    <td class="num">${isNum(r.listPrice)?won(r.listPrice):"—"}${r.listNote?`<br><span class="muted small">${esc(r.listNote)}</span>`:""}</td>
+    <td class="num ${isNum(r.quoteDelta)?(r.quoteDelta>0?"delta-plus":"delta-zero"):""}">${isNum(r.quoteDelta)?signed(r.quoteDelta):"—"}</td>
+    <td class="wrap small">${esc(r.extraFees)}${r.priceNote?`<br><span class="muted">${esc(r.priceNote)}</span>`:""}</td>
+    ${SCORE[kind].map(s=>`<td>${scoreSelect("vendors",r.id,kind,s[0],r.scores&&r.scores[s[0]])}</td>`).join("")}
+    <td>${avgCell(avg(r.scores,kind))}</td><td>${statusSelect("vendors",r.id,r.status,V_STATUS)}</td>
+    <td class="links">${r.insta?`<a href="${esc(r.insta)}" target="_blank" rel="noopener">인스타</a>`:`<span class="muted small">인스타 미입력</span> `}${r.blog?`<a href="${esc(r.blog)}" target="_blank" rel="noopener">저장한 후기</a>`:""}<a href="${blogLink(r.name.replace(/\s*\(.*\)/,""))}" target="_blank" rel="noopener">블로그 검색</a></td>
+    <td class="wrap small">${esc(r.memo)}</td></tr>`).join("")}
+  </tbody></table></div>`:`<div class="empty-state panel">조건에 맞는 업체가 없어요.</div>`}
+`;
+}
+function dressPriceIndex(){
+  const lists=list("priceLists").filter(l=>l.cat==="dress"); const by={};
+  lists.forEach(l=>(l.rows||[]).forEach(r=>{ (by[r.key]=by[r.key]||{key:r.key,name:r.shop,p:{}}).p[l.planner]=r; }));
+  return {lists,by};
+}
+function viewDressPrices(){
+  const {lists,by}=dressPriceIndex(); if(!lists.length) return "";
+  const P=["제이웨딩","다이렉트","베리굿"]; const f=ui.price;
+  const norm=n=>n.replace(/\s|\(.*\)/g,"").replace(/웨딩$/,""); const mineN=new Set(list("vendors").filter(v=>v.cat==="dress").map(v=>norm(v.name))); const mine={has:k=>mineN.has(norm(k))};
+  let rows=Object.values(by);
+  if(f.q) rows=rows.filter(r=>r.name.toLowerCase().includes(f.q.toLowerCase()));
+  if(f.only==="multi") rows=rows.filter(r=>Object.keys(r.p).length>1);
+  if(f.only==="mine") rows=rows.filter(r=>mine.has(r.key));
+  if(P.includes(f.only)) rows=rows.filter(r=>r.p[f.only]);
+  const minOf=(r,k)=>Math.min(...P.map(p=>r.p[p]&&isNum(r.p[p][k])?r.p[p][k]:Infinity));
+  rows=sortRows(rows,"dprice",{name:r=>r.name,main:r=>{const m=minOf(r,"main");return m===Infinity?null:m;},combo:r=>{const m=minOf(r,"combo");return m===Infinity?null:m;},n:r=>Object.keys(r.p).length});
+  const cell=(r,p,k)=>{const x=r.p[p]; if(!x||!isNum(x[k])) return `<td class="num muted">—</td>`; const mx=k==="main"?x.mainMax:x.comboMax; const cheap=Object.keys(r.p).length>1&&x[k]===minOf(r,k); return `<td class="num ${cheap?"cheapest":""}">${man(x[k])}${mx?"~"+man(mx):""}</td>`;};
+  const cand=Object.values(by).filter(r=>mine.has(r.key));
+  const candTable=cand.length?`<h3>우리 후보 드레스샵</h3><div class="tablebox" style="margin-bottom:18px"><table class="sheet"><thead><tr><th>드레스샵</th>${P.map(p=>`<th colspan="2" style="text-align:center">${p}</th>`).join("")}</tr><tr><th></th>${P.map(()=>`<th>본식</th><th>촬영+본식</th>`).join("")}</tr></thead><tbody>${cand.map(r=>`<tr><td class="name"><button data-act="dp" data-key="${esc(r.key)}">${esc(r.name)}</button></td>${P.map(p=>cell(r,p,"main")+cell(r,p,"combo")).join("")}</tr>`).join("")}</tbody></table></div>`:"";
+  return `
+  <section>
+    <h2>드레스 견적 비교</h2>
+    <div class="cards" style="margin:10px 0 18px">${lists.map(l=>`<div class="stat"><div class="k">${esc(l.planner)} 견적 엑셀</div><div class="v">${(l.rows||[]).length}곳</div><div class="s">${esc(l.asOf)}</div></div>`).join("")}</div>
+    ${candTable}
+    <h3>전체 드레스샵 (${Object.keys(by).length}곳)</h3>
+    <p class="lead">받은 세 파일(제이웨딩·다이렉트·베리굿)의 가격표를 샵 기준으로 합쳤어요. 여러 곳에 있는 샵은 가장 싼 값을 초록색으로 표시해요. 표에 적힌 값은 할인 전 정가라 실제 계약가는 더 낮아요.</p>
+    <div class="filters">
+      <input type="search" placeholder="드레스샵 검색" value="${esc(f.q)}" data-filter="price.q" aria-label="드레스샵 검색">
+      <select data-filter="price.only" aria-label="보기"><option value="">전체 ${Object.keys(by).length}곳</option><option value="multi" ${f.only==="multi"?"selected":""}>2곳 이상에 있는 샵</option><option value="mine" ${f.only==="mine"?"selected":""}>내 후보만</option>${P.map(p=>`<option ${f.only===p?"selected":""}>${p}</option>`).join("")}</select>
+      <span class="spacer"></span><span class="muted small">${rows.length}곳</span>
+    </div>
+    <div class="tablebox" style="max-height:64vh;overflow:auto"><table class="sheet"><thead>
+      <tr>${th("dprice","name","드레스샵")}${th("dprice","n","취급")}${P.map(p=>`<th colspan="2" style="text-align:center">${p}</th>`).join("")}<th>헬퍼 (본식 1회)</th><th>피팅비</th><th>디자인 추가금</th><th></th></tr>
+      <tr><th></th><th></th>${P.map(()=>`<th data-sort="main" data-tabkey="dprice">본식</th><th data-sort="combo" data-tabkey="dprice">촬영+본식</th>`).join("")}<th></th><th></th><th></th><th></th></tr>
+    </thead><tbody>
+      ${rows.map(r=>{const any=P.map(p=>r.p[p]).find(Boolean); return `<tr>
+        <td class="name"><button data-act="dp" data-key="${esc(r.key)}">${esc(r.name)}</button>${mine.has(r.key)?` <span class="pill src">후보</span>`:""}</td>
+        <td class="small">${Object.keys(r.p).length}곳</td>
+        ${P.map(p=>cell(r,p,"main")+cell(r,p,"combo")).join("")}
+        <td class="small">${esc(any.helper||"")}</td><td class="small">${esc((r.p["제이웨딩"]||r.p["베리굿"]||any).fitting||"")}</td>
+        <td class="wrap small">${esc((r.p["제이웨딩"]||any).design||"").replace(/\n/g," / ")}</td>
+        <td>${mine.has(r.key)?"":`<button class="btn small" data-act="dpAdd" data-key="${esc(r.key)}">후보 추가</button>`}</td></tr>`;}).join("")}
+    </tbody></table></div>
+    <div class="why">${lists.map(l=>`<b>${esc(l.planner)}</b> ${esc(l.asOf)} — ${esc(l.unitNote)}`).join("<br>")}</div>
+  </section>`;
+}
+function openDressPrice(key){
+  const {by}=dressPriceIndex(); const r=by[key]; if(!r) return;
+  const blocks=Object.entries(r.p).map(([p,x])=>`<div class="panel" style="padding:12px"><h3>${esc(p)}</h3><dl class="kv">
+    <dt>본식</dt><dd>${won(x.main)}${x.mainMax?" ~ "+won(x.mainMax):""}</dd><dt>촬영+본식</dt><dd>${won(x.combo)}${x.comboMax?" ~ "+won(x.comboMax):""}</dd>
+    <dt>헬퍼</dt><dd>${esc(x.helper)}</dd><dt>피팅비</dt><dd>${esc(x.fitting)}</dd>${x.refit?`<dt>재가봉비</dt><dd>${esc(x.refit)}</dd>`:""}
+    <dt>디자인 추가금</dt><dd>${esc(x.design).replace(/\n/g,"<br>")}${p==="다이렉트"&&x.design?" (만원)":""}</dd>${x.firstWear?`<dt>퍼스트웨어</dt><dd>${esc(x.firstWear)}</dd>`:""}${x.extraDress?`<dt>드레스 추가</dt><dd>${esc(x.extraDress)}</dd>`:""}
+    ${x.notes?`<dt>기타</dt><dd>${esc(x.notes)}</dd>`:""}${x.extras?`<dt>추가금</dt><dd>${esc(x.extras).replace(/\n/g,"<br>")}</dd>`:""}${x.penalty?`<dt>위약금</dt><dd class="small">${esc(x.penalty).replace(/\n/g,"<br>")}</dd>`:""}</dl></div>`).join("");
+  $("#drawerRoot").innerHTML=`<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(r.name)} 가격표"><header><h2>${esc(r.name)}</h2><button class="btn small" data-close>닫기</button></header><div class="content">${blocks}</div></aside>`;
+  $("#drawerRoot").querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{$("#drawerRoot").innerHTML="";});
+}
+
+/* ================= HALLS ================= */
+function viewHalls(){
+  const f=ui.hall, g=S().guests||0; const all=list("halls");
+  const gus=[...new Set(all.filter(h=>!f.zone||h.zone===f.zone).map(h=>h.gu).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
+  let rows=all;
+  if(f.hideExcluded) rows=rows.filter(r=>r.status!=="제외");
+  if(f.q){const q=f.q.toLowerCase(); rows=rows.filter(r=>[r.name,r.dong,r.station,(r.tags||[]).join(" "),(r.mood||[]).join(" ")].join(" ").toLowerCase().includes(q));}
+  if(f.zone) rows=rows.filter(r=>r.zone===f.zone); if(f.gu) rows=rows.filter(r=>r.gu===f.gu);
+  if(f.type) rows=rows.filter(r=>r.type===f.type); if(f.status) rows=rows.filter(r=>r.status===f.status);
+  if(f.src==="planner") rows=rows.filter(r=>r.plannerQuote);
+  if(f.maxMeal) rows=rows.filter(r=>isNum(r.mealMin)&&r.mealMin<=Number(f.maxMeal));
+  if(!ui.sort.hall) ui.sort.hall={key:"status",dir:"desc"};
+  rows=sortRows(rows,"hall",{name:r=>r.name,gu:r=>r.gu,type:r=>r.type,meal:r=>r.mealMin,rental:r=>r.rental,min:r=>r.minGuests,est:r=>hallEstimate(r,g),walk:r=>r.walk,park:r=>r.parking,avg:r=>avg(r.scores,"hall"),status:r=>rank(r.status)});
+  const yn=v=>v===true?"O":v===false?"X":"—";
+  const pq=all.filter(h=>h.plannerQuote).length;
+  return `
+  <h2>웨딩홀</h2>
+  <p class="lead">서울 ${all.length}곳. 기본값은 이너웨딩 공개 데이터(2026년 7월)이고, 플래너 자료(2026년 9월 정상가)가 있는 ${pq}곳은 그 금액으로 바꿔 두었어요. 예상 총액은 하객 ${g}명 기준이에요. 이름을 눌러 기준 홀로 지정하면 전체 예산에 반영돼요.</p>
+  <div class="filters">
+    <input type="search" placeholder="홀 이름·동·역·태그" value="${esc(f.q)}" data-filter="hall.q" aria-label="검색">
+    <select data-filter="hall.zone" aria-label="권역"><option value="">전체 권역</option>${ZONES.map(z=>`<option ${f.zone===z?"selected":""}>${z}</option>`).join("")}</select>
+    <select data-filter="hall.gu" aria-label="구"><option value="">전체 구</option>${gus.map(z=>`<option ${f.gu===z?"selected":""}>${z}</option>`).join("")}</select>
+    <select data-filter="hall.type" aria-label="홀 유형"><option value="">전체 유형</option>${HALL_TYPES.map(z=>`<option ${f.type===z?"selected":""}>${z}</option>`).join("")}</select>
+    <select data-filter="hall.status" aria-label="상태"><option value="">모든 상태</option>${H_STATUS.map(z=>`<option ${f.status===z?"selected":""}>${z}</option>`).join("")}</select>
+    <select data-filter="hall.src" aria-label="자료"><option value="">모든 홀</option><option value="planner" ${f.src==="planner"?"selected":""}>플래너 추천 ${pq}곳</option></select>
+    <label>식대 상한 <input type="number" step="5000" min="0" style="width:96px" value="${esc(f.maxMeal)}" data-filter="hall.maxMeal" placeholder="예: 90000"></label>
+    <label><input type="checkbox" data-filter="hall.hideExcluded" ${f.hideExcluded?"checked":""}> 제외 숨기기</label>
+    <label>하객 <input type="number" min="0" step="10" style="width:72px" value="${esc(g)}" data-act="guests"> 명</label>
+    <span class="spacer"></span><span class="muted small">${rows.length}곳</span>
+    <button class="btn" data-act="add" data-col="halls">웨딩홀 추가</button>
+  </div>
+  <div class="tablebox" style="max-height:72vh;overflow:auto"><table class="sheet"><thead><tr>
+    ${th("hall","name","웨딩홀")}<th>기준</th>${th("hall","gu","지역")}${th("hall","type","유형")}${th("hall","meal","식대(1인)")}${th("hall","rental","대관료")}${th("hall","min","최소보증")}${th("hall","est","예상 총액")}
+    <th>가능 시간대</th><th>옵션비용</th>${th("hall","walk","교통")}${th("hall","park","주차")}<th>분리/단독</th><th>특징</th>
+    ${SCORE.hall.map(s=>`<th class="sc">${s[1]}</th>`).join("")}${th("hall","avg","평균","sc")}${th("hall","status","상태")}<th>링크</th><th>메모</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>{const est=hallEstimate(r,g); const opt=[isNum(r.flowerFee)?"꽃 "+man(r.flowerFee):"",isNum(r.productionFee)?"연출 "+man(r.productionFee):"",isNum(r.snapFee)?"스냅 "+man(r.snapFee):"",r.otherOptions||""].filter(Boolean).join(" · ");
+  const isMain=S().mainHall===r.id;
+  return `<tr>
+    <td class="name"><button data-open="halls" data-id="${r.id}">${esc(r.name)}</button>${r.plannerQuote?`<br><span class="pill src">${esc(r.plannerQuote.cat)}</span>`:""}</td>
+    <td><input type="radio" name="mainHall" data-act="setMain" data-id="${r.id}" ${isMain?"checked":""} aria-label="${esc(r.name)} 기준 홀로 지정"></td>
+    <td class="small">${esc(r.gu)} ${esc(r.dong)}<br><span class="muted">${esc(r.zone)}</span></td><td>${esc(r.type)}</td>
+    <td class="num">${isNum(r.mealMin)?(r.mealMax&&r.mealMax!==r.mealMin?`${man(r.mealMin)}~${man(r.mealMax)}`:man(r.mealMin)):"<span class='muted'>상담</span>"}</td>
+    <td class="num" title="${esc(r.rentalNote)}">${isNum(r.rental)?man(r.rental):"<span class='muted'>상담</span>"}${r.plannerQuote?`<br><span class="unit">꽃장식 포함</span>`:""}</td>
+    <td class="num">${isNum(r.minGuests)?r.minGuests+"명":"—"}${isNum(r.maxGuests)?`<br><span class="muted small">~${r.maxGuests}</span>`:""}</td>
+    <td class="num"><b>${est!=null?man(Math.round(est)):"—"}</b>${est!=null&&!isNum(r.rental)?`<br><span class="muted small">대관료 제외</span>`:""}</td>
+    <td class="wrap small" style="min-width:120px">${esc(r.times)||`<span class="muted">${isNum(r.interval)?r.interval+"분 간격":"입력"}</span>`}</td>
+    <td class="wrap small" style="min-width:120px">${esc(opt)||`<span class="muted">${esc(r.includes||"입력")}</span>`}</td>
+    <td class="small">${esc(r.station)}${isNum(r.walk)?` ${r.walk}분`:""}</td><td class="num">${isNum(r.parking)?r.parking+"대":"—"}</td>
+    <td class="small">분리 ${yn(r.split)} / 단독 ${yn(r.exclusive)}</td>
+    <td class="wrap small">${(r.mood||[]).concat((r.tags||[]).slice(0,4)).slice(0,6).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</td>
+    ${SCORE.hall.map(s=>`<td>${scoreSelect("halls",r.id,"hall",s[0],r.scores&&r.scores[s[0]])}</td>`).join("")}
+    <td>${avgCell(avg(r.scores,"hall"))}</td><td>${statusSelect("halls",r.id,r.status,H_STATUS)}</td>
+    <td class="links">${r.homepage?`<a href="${esc(r.homepage)}" target="_blank" rel="noopener">홈페이지</a>`:""}${r.insta?`<a href="${esc(r.insta)}" target="_blank" rel="noopener">인스타</a>`:""}${r.naverPlace?`<a href="${esc(r.naverPlace)}" target="_blank" rel="noopener">플레이스</a>`:""}<a href="${blogLink(r.name.replace(/\s*\(.*\)/,""))}" target="_blank" rel="noopener">블로그</a></td>
+    <td class="wrap small">${esc(r.memo)}</td></tr>`;}).join("")}
+  </tbody></table></div>`;
+}
+
+/* ================= DRESS BOARD ================= */
+function viewBoard(){
+  const rows=list("dresses").sort((a,b)=>(b.rating||0)-(a.rating||0)||(b.createdAt||0)-(a.createdAt||0));
+  const shops=[...new Set(list("vendors").filter(v=>v.cat==="dress").map(v=>v.name).concat(Object.values(dressPriceIndex().by).map(r=>r.name)))];
+  return `
+  <h2>드레스 보드</h2>
+  <p class="lead">마음에 든 드레스 사진을 모아 두고, 샵·실루엣·용도를 붙여 비교해요. 하트 수 순으로 정렬돼요.</p>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="드레스 사진 올리기">사진을 여기로 끌어 놓거나 눌러서 여러 장 올리기</div>
+  <div class="board" style="margin-top:16px">
+  ${rows.map(r=>`<div class="card">
+    ${photoSrc(r)?`<img src="${esc(photoSrc(r))}" alt="${esc((r.shop||"")+" 드레스")}">`:`<div class="thumb empty" style="width:100%;aspect-ratio:3/4;height:auto">사진 없음</div>`}
+    <div class="body">
+      <div class="hearts" role="group" aria-label="선호도">${[1,2,3,4,5].map(n=>`<button class="${(r.rating||0)>=n?"on":""}" data-act="heart" data-id="${r.id}" data-n="${n}" aria-label="${n}점">♥</button>`).join("")}</div>
+      <input list="shopList" placeholder="드레스샵" value="${esc(r.shop)}" data-act="dfield" data-id="${r.id}" data-key="shop">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <select data-act="dsel" data-id="${r.id}" data-key="silhouette" aria-label="실루엣">${SILHOUETTES.map(s=>`<option value="${s}" ${r.silhouette===s?"selected":""}>${s||"실루엣"}</option>`).join("")}</select>
+        <select data-act="dsel" data-id="${r.id}" data-key="use" aria-label="용도">${USES.map(s=>`<option value="${s}" ${r.use===s?"selected":""}>${s||"용도"}</option>`).join("")}</select>
+      </div>
+      <input placeholder="메모 (소재, 라인명, 느낌)" value="${esc(r.memo)}" data-act="dfield" data-id="${r.id}" data-key="memo">
+      <div style="display:flex;gap:6px"><button class="btn small" data-act="photo" data-col="dresses" data-id="${r.id}">사진 바꾸기</button><button class="btn small danger" data-act="del" data-col="dresses" data-id="${r.id}">삭제</button></div>
+    </div></div>`).join("")}
+  </div>
+  <datalist id="shopList">${shops.map(s=>`<option value="${esc(s)}">`).join("")}</datalist>`;
+}
+
+/* ================= HOUSE ================= */
+function viewHouse(){
+  const s=S(), f=s.fin, h=s.house;
+  return `
+  <h2>신혼집 자금과 대출</h2>
+  <p class="lead">금액은 만원 단위로 적어요. 적는 즉시 아래 결과와 임장 후보표가 다시 계산돼요. 대출 규정은 2026년 9월 기준 공개 자료를 바탕으로 한 추정이라, 실제 한도는 은행 사전 조회로 꼭 확인해 주세요.</p>
+  <div class="grid2">
+    <section class="panel">
+      <h3>우리 자금</h3>
+      <div class="formgrid">
+        ${manInput("fin.jAsset",f.jAsset,"J 모은 돈")}${manInput("fin.dAsset",f.dAsset,"D 모은 돈")}
+        ${manInput("fin.jParents",f.jParents,"J 부모님 지원")}${manInput("fin.dParents",f.dParents,"D 부모님 지원","미정이면 비워두기")}
+        ${manInput("fin.other",f.other,"기타 (청약·퇴직금 등)")}
+      </div>
+      <div style="margin-top:8px;display:grid;gap:4px">${chkInput("fin.subtractWedding",f.subtractWedding,"결혼식 비용(축의금 뺀 실부담)을 먼저 빼기")}${chkInput("fin.subtractSetup",f.subtractSetup,"신혼집 세팅 비용(가전·가구·이사)도 빼기")}</div>
+      <div id="eqOut"></div>
+    </section>
+    <section class="panel">
+      <h3>소득 (DSR 계산용)</h3>
+      <div class="formgrid">
+        ${manInput("fin.jIncome",f.jIncome,"J 연소득 (세전)")}${manInput("fin.dIncome",f.dIncome,"D 연소득 (세전)")}
+        ${manInput("fin.existingAnnual",f.existingAnnual,"기존 대출 연 상환액","없으면 0")}
+      </div>
+      <div style="margin-top:8px">${chkInput("fin.combineIncome",f.combineIncome,"부부 소득 합산해서 심사 (혼인신고 후 공동 차주 기준)")}</div>
+      <div class="why">은행은 복지포인트 같은 비과세 항목을 인정소득에서 빼는 경우가 많아요. 원천징수영수증의 총급여 기준으로 넣는 게 안전해요.</div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="seg" role="group" aria-label="전세 또는 매매"><button data-set-mode="jeonse" aria-pressed="${h.mode!=="buy"}">전세</button><button data-set-mode="buy" aria-pressed="${h.mode==="buy"}">매매</button></div>
+    ${h.mode==="buy"?`
+    <div class="panel"><div class="formgrid">
+      ${manInput("house.price",h.price,"매매가")}
+      ${numInput("house.rate",h.rate,"대출 금리","% (연)",0.05)}${numInput("house.years",h.years,"대출 기간","년",1)}
+      ${numInput("house.stress",h.stress,"스트레스 가산금리","%p",0.1)}${numInput("house.dsr",h.dsr,"DSR 한도","% (은행 40)",1)}
+      ${manInput("house.regFee",h.regFee,"등기·법무 비용")}
+    </div><div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">${chkInput("house.regulated",h.regulated,"규제지역 (서울 전역)")}${chkInput("house.firstHome",h.firstHome,"생애최초 주택구입")}${chkInput("house.area85",h.area85,"전용 85㎡ 초과")}</div></div>`:`
+    <div class="panel"><div class="formgrid">
+      ${manInput("house.deposit",h.deposit,"전세 보증금")}
+      <label>전세대출 상품<select data-set="house.product"><option value="seoul" ${h.product==="seoul"?"selected":""}>서울시 신혼부부 이자지원</option><option value="buttimok" ${h.product==="buttimok"?"selected":""}>신혼부부 버팀목</option><option value="bank" ${h.product==="bank"?"selected":""}>시중은행 (HF 보증)</option></select><span class="hint">조건이 안 맞으면 되는 상품으로 자동 전환</span></label>
+      ${numInput("house.seoulBase",h.seoulBase,"서울시 협약대출 금리 (지원 전)","% · COFIX+1.45",0.01)}
+      ${numInput("house.bankRate",h.bankRate,"시중은행 전세대출 금리","%",0.05)}
+      ${manInput("house.bankCap",h.bankCap,"시중은행 한도")}
+    </div></div>`}
+    <div id="houseOut" style="margin-top:14px"></div>
+  </section>
+
+  <section class="section">
+    <h2>대출 이자 시뮬레이터</h2>
+    <div class="panel">
+      <div class="formgrid">
+        <label class="chk"><input type="checkbox" data-set="loanSim.auto" ${s.loanSim.auto?"checked":""}> 위 계산 결과 대출금·금리 그대로 쓰기</label>
+        ${manInput("loanSim.principal",s.loanSim.principal,"대출 원금")}
+        ${numInput("loanSim.rate",s.loanSim.rate,"금리","% (연)",0.05)}
+        ${numInput("loanSim.years",s.loanSim.years,"기간","년",1)}
+        <label>상환 방식<select data-set="loanSim.method"><option value="equal" ${s.loanSim.method==="equal"?"selected":""}>원리금균등</option><option value="principal" ${s.loanSim.method==="principal"?"selected":""}>원금균등</option><option value="bullet" ${s.loanSim.method==="bullet"?"selected":""}>만기일시 (전세대출)</option></select></label>
+        ${numInput("loanSim.grace",s.loanSim.grace,"거치 기간","년",1)}
+      </div>
+      <div id="loanOut" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>임장 후보</h2>
+    <p class="lead">단지를 추가하고 호가·KB시세·전세가를 적으면, 위 자금 조건으로 살 수 있는지(또는 전세로 들어갈 수 있는지) 바로 계산해요. 단지명을 누르면 임장 체크리스트가 열려요.</p>
+    <div class="filters"><span class="links small">시세 확인: <a href="https://kbland.kr/" target="_blank" rel="noopener">KB부동산</a><a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토부 실거래가</a><a href="https://new.land.naver.com/" target="_blank" rel="noopener">네이버부동산</a><a href="https://hogangnono.com/" target="_blank" rel="noopener">호갱노노</a><a href="https://asil.kr/" target="_blank" rel="noopener">아실</a><a href="https://www.iros.go.kr/" target="_blank" rel="noopener">인터넷등기소</a></span><span class="spacer"></span><button class="btn" data-act="add" data-col="homes">단지 추가</button></div>
+    <div id="homesOut"></div>
+  </section>`;
+}
+function refreshHouse(){
+  if(ui.tab!=="house") return; const s=S();
+  const eq=equity(s);
+  const eo=$("#eqOut"); if(eo) eo.innerHTML=`<div class="lines" style="margin-top:10px">
+    <div class="row"><span class="k">모은 돈 + 지원 합계</span><b>${eok(eq.base)}</b></div>
+    ${s.fin.subtractWedding?`<div class="row"><span class="k">결혼식 실부담</span><b>− ${eok(eq.wc)}</b></div>`:""}
+    ${s.fin.subtractSetup?`<div class="row"><span class="k">신혼집 세팅</span><b>− ${eok(eq.sc)}</b></div>`:""}
+    <div class="row"><span class="k">집에 쓸 수 있는 돈</span><b class="ok">${eok(eq.avail)}</b></div></div>`;
+  const ho=$("#houseOut"); let autoP=null, autoR=null;
+  if(ho){
+    if(s.house.mode==="buy"){
+      const c=buyCalc(s.house.price,s), mx=maxBuyPrice(s); autoP=c.L.lim; autoR=s.house.rate;
+      ho.innerHTML=`<div class="cards">
+        <div class="stat"><div class="k">대출 가능액</div><div class="v">${eok(c.L.lim)}</div><div class="s">묶이는 기준: <b>${c.L.bind}</b></div></div>
+        <div class="stat"><div class="k">필요한 현금</div><div class="v">${eok(c.cashNeed)}</div><div class="s">취득세 ${eok(c.tax)} · 중개 ${eok(c.fee)} · 등기 ${eok(c.reg)}</div></div>
+        <div class="stat"><div class="k">${c.gap<0?"부족한 돈":"남는 돈"}</div><div class="v ${c.gap<0?"bad":"good"}">${eok(Math.abs(c.gap))}</div><div class="s">집에 쓸 수 있는 돈 ${eok(c.eq.avail)}</div></div>
+        <div class="stat"><div class="k">월 상환 (원리금균등)</div><div class="v">${won(Math.round(c.monthly))}</div><div class="s">${s.house.rate}% · ${s.house.years}년</div></div>
+        <div class="stat"><div class="k">이 조건으로 살 수 있는 최고가</div><div class="v">${mx?eok(mx):"—"}</div><div class="s">현금·대출 한도를 모두 맞추는 가격</div></div></div>
+        <div class="why">LTV ${Math.round(c.L.ltvRate*100)}% → ${eok(c.L.ltv)} · 가격별 한도 → ${isFinite(c.L.cap)?eok(c.L.cap):"없음"} · DSR ${s.house.dsr}% (금리 ${s.house.rate}%+스트레스 ${s.house.stress}%p, 소득 ${eok(incomeFor(s))}) → ${eok(c.L.dsr)}.<br>
+        서울은 전역이 규제지역이라 일반 LTV 40%, 생애최초는 70%이고, 15억 이하 6억·15~25억 4억·25억 초과 2억의 가격별 한도가 따로 붙어요. 취득세는 1주택 기준 추정치(생애최초 12억 이하 200만 원 감면 가정)예요.</div>`;
+    } else {
+      const c=jeonseCalc(s.house.deposit,s); autoP=c.loan; autoR=c.p.rate;
+      const prod=Object.entries(c.P).map(([k,p])=>`<tr><td>${k===c.pk?"<b>":""}${esc(p.label)}${k===c.pk?"</b> ✓":""}</td><td>${p.ok?`<span class="ok">가능</span>`:`<span class="no">불가</span> <span class="small muted">${esc(p.why)}</span>`}</td><td class="num">${eok(p.cap)}</td><td class="num">${p.rate.toFixed(2)}%</td><td class="small muted wrap">${esc(p.note)}</td></tr>`).join("");
+      ho.innerHTML=`<div class="cards">
+        <div class="stat"><div class="k">필요한 대출</div><div class="v">${eok(c.needLoan)}</div><div class="s">보증금 + 중개보수 ${eok(c.fee)} − 쓸 수 있는 돈</div></div>
+        <div class="stat"><div class="k">선택 상품 한도</div><div class="v">${eok(c.p.cap)}</div><div class="s">${esc(c.p.label)}</div></div>
+        <div class="stat"><div class="k">${c.gap<0?"부족한 돈":"남는 돈"}</div><div class="v ${c.gap<0?"bad":"good"}">${eok(Math.abs(c.gap))}</div><div class="s">한도까지 빌렸을 때</div></div>
+        <div class="stat"><div class="k">월 이자</div><div class="v">${won(Math.round(c.monthlyInterest))}</div><div class="s">대출 ${eok(c.loan)} × ${c.p.rate.toFixed(2)}%</div></div></div>
+        <div class="tablebox" style="margin-top:12px"><table class="sheet"><thead><tr><th>상품</th><th>자격</th><th>한도</th><th>실금리</th><th>근거</th></tr></thead><tbody>${prod}</tbody></table></div>
+        <div class="why">서울시 신혼부부 이자지원은 보증금 7억 이하·부부합산 1.3억 이하가 조건이고, 최대 3억(보증금 90%)까지 대출에 소득 구간별 이자를 서울시가 대신 내줘요. 버팀목은 수도권 보증금 4억·소득 7,500만 원 이하일 때만 돼요. 무주택자 전세대출에는 DSR이 적용되지 않는다고 가정했어요.</div>`;
+    }
+  }
+  const lo=$("#loanOut"); if(lo){
+    const ls=s.loanSim; const P=ls.auto?(autoP||0):(ls.principal||0); const r=ls.auto?(autoR||0):(ls.rate||0);
+    const method=ls.auto&&s.house.mode!=="buy"?"bullet":ls.method; const yrs=ls.auto?(s.house.mode==="buy"?s.house.years:2):(ls.years||30);
+    const a=amort(P,r,yrs,method,ls.grace||0); const inc=incomeFor(s);
+    const rates=[-1,-0.5,0,0.5,1,1.5].map(d=>Math.max(0.1,r+d));
+    const maxB=Math.max(P,1); const bars=a.yearly.map((b,i)=>{const x=30+i*(940/Math.max(1,a.yearly.length)); const w=Math.max(1,940/Math.max(1,a.yearly.length)-3); const hgt=b/maxB*150; return `<rect x="${x.toFixed(1)}" y="${(170-hgt).toFixed(1)}" width="${w.toFixed(1)}" height="${hgt.toFixed(1)}" fill="var(--ribbon)" opacity=".75"><title>${i+1}년 차 잔액 ${eok(b)}</title></rect>`;}).join("");
+    lo.innerHTML=`<div class="cards">
+      <div class="stat"><div class="k">원금 · 금리</div><div class="v">${eok(P)}</div><div class="s">${r.toFixed(2)}% · ${yrs}년 · ${method==="equal"?"원리금균등":method==="principal"?"원금균등":"만기일시"}</div></div>
+      <div class="stat"><div class="k">첫 달 납입</div><div class="v">${won(Math.round(a.first||0))}</div><div class="s">${a.afterGrace?`거치 후 ${won(Math.round(a.afterGrace))}`:inc?`월소득 대비 ${((a.first||0)/(inc/12)*100).toFixed(1)}%`:""}</div></div>
+      <div class="stat"><div class="k">총 이자</div><div class="v">${eok(a.total)}</div><div class="s">${method==="bullet"?`${yrs}년 동안 이자만 낼 때`:"만기까지 다 갚을 때"}</div></div></div>
+      <svg class="chart" viewBox="0 0 1000 190" role="img" aria-label="연차별 대출 잔액"><line x1="30" y1="170" x2="970" y2="170" stroke="var(--line)"/>${bars}<text x="30" y="186" font-size="12" fill="var(--muted)">1년</text><text x="945" y="186" font-size="12" fill="var(--muted)">${yrs}년</text><text x="30" y="14" font-size="12" fill="var(--muted)">연말 잔액 (최대 ${eok(P)})</text></svg>
+      <div class="tablebox" style="margin-top:10px"><table class="sheet"><thead><tr><th>금리</th><th>첫 달 납입</th><th>총 이자</th></tr></thead><tbody>
+        ${rates.map(x=>{const b=amort(P,x,yrs,method,ls.grace||0); return `<tr${Math.abs(x-r)<1e-9?' style="font-weight:600"':""}><td>${x.toFixed(2)}%</td><td class="num">${won(Math.round(b.first||0))}</td><td class="num">${eok(b.total)}</td></tr>`;}).join("")}
+      </tbody></table></div>`;
+  }
+  const hm=$("#homesOut"); if(hm) hm.innerHTML=homesTable(s);
+}
+function homeCalc(r,s){
+  if(r.kind==="전세"){ const dep=r.jeonse||r.price; if(!isNum(dep)) return null; const c=jeonseCalc(dep,s); return {ok:c.gap>=0,gap:c.gap,monthly:c.monthlyInterest,label:`대출 ${eok(c.loan)}`}; }
+  const price=r.price||r.kb; if(!isNum(price)) return null; const c=buyCalc(price,s); return {ok:c.gap>=0,gap:c.gap,monthly:c.monthly,label:`대출 ${eok(c.L.lim)} (${c.L.bind})`};
+}
+function homesTable(s){
+  let rows=list("homes");
+  rows=sortRows(rows,"home",{name:r=>r.name,price:r=>r.price,avg:r=>avg(r.scores,"home"),status:r=>rank(r.status),gap:r=>{const c=homeCalc(r,s);return c?c.gap:null;}});
+  if(!rows.length) return `<div class="empty-state panel">아직 후보 단지가 없어요. ‘단지 추가’로 첫 후보를 넣어 보세요.</div>`;
+  return `<div class="tablebox"><table class="sheet"><thead><tr>
+    ${th("home","name","단지")}<th>지역</th><th>유형</th><th>전용</th>${th("home","price","호가")}<th>KB시세</th><th>실거래</th><th>전세가</th><th>전세가율</th><th>세대·연식</th><th>역</th>${th("home","gap","자금 판정")}<th>월 부담</th>
+    ${SCORE.home.map(x=>`<th class="sc">${x[1]}</th>`).join("")}${th("home","avg","평균","sc")}${th("home","status","상태")}<th>임장일</th><th>링크</th><th>메모</th></tr></thead><tbody>
+    ${rows.map(r=>{const c=homeCalc(r,s); const base=r.kb||r.price; const jr=isNum(r.jeonse)&&isNum(base)?Math.round(r.jeonse/base*100):null; const done=Object.values(r.checks||{}).filter(Boolean).length; const total=CHECKS.reduce((a,g)=>a+g[1].length,0);
+    return `<tr>
+      <td class="name"><button data-open="homes" data-id="${r.id}">${esc(r.name)}</button><br><span class="unit">체크 ${done}/${total}</span></td>
+      <td class="small">${esc(r.gu)} ${esc(r.dong)}</td><td>${esc(r.kind||"매매")}</td><td class="num">${isNum(r.area)?r.area+"㎡":"—"}</td>
+      <td class="num">${isNum(r.price)?eok(r.price):"—"}</td><td class="num">${isNum(r.kb)?eok(r.kb):"—"}</td><td class="num">${isNum(r.recent)?eok(r.recent):"—"}</td><td class="num">${isNum(r.jeonse)?eok(r.jeonse):"—"}</td>
+      <td class="num ${jr!=null&&jr>=70?"no":""}">${jr!=null?jr+"%":"—"}</td>
+      <td class="small">${isNum(r.units)?r.units+"세대":""}${isNum(r.year)?`<br>${r.year}년`:""}</td><td class="small">${esc(r.station)}${isNum(r.walk)?" "+r.walk+"분":""}</td>
+      <td class="num">${c?`<span class="${c.ok?"ok":"no"}">${c.ok?"가능":"부족"} ${eok(Math.abs(c.gap))}</span><br><span class="unit">${esc(c.label)}</span>`:"<span class='muted'>가격 입력</span>"}</td>
+      <td class="num">${c?won(Math.round(c.monthly)):"—"}</td>
+      ${SCORE.home.map(x=>`<td>${scoreSelect("homes",r.id,"home",x[0],r.scores&&r.scores[x[0]])}</td>`).join("")}
+      <td>${avgCell(avg(r.scores,"home"))}</td><td>${statusSelect("homes",r.id,r.status,HOME_STATUS)}</td>
+      <td class="small">${esc(r.visit)}</td>
+      <td class="links"><a href="${naverQ(r.name+" KB시세")}" target="_blank" rel="noopener">KB시세</a><a href="${naverQ(r.name+" 실거래가")}" target="_blank" rel="noopener">실거래</a><a href="${blogLink(r.name.replace(/\s*\(.*\)/,"")+" 임장")}" target="_blank" rel="noopener">임장기</a></td>
+      <td class="wrap small">${esc(r.memo)}</td></tr>`;}).join("")}
+  </tbody></table></div>`;
+}
+
+/* ================= DRAWER ================= */
+const FIELDS={
+  planners:[["name","플래너 이름"],["kind","유형","select",["동행 플래너","비동행 플래너","온라인·앱","기타"]],["manager","담당자"],["phone","연락처"],["address","주소","wide"],["features","특징","area"],["benefits","혜택","area"],["fee","비용·결제 조건","area"],["insta","인스타그램 링크"],["blog","사이트·후기 링크"],["source","출처"],["memo","메모","area"]],
+  vendors:[["name","업체명"],["cat","분류","select",["studio","dress","makeup","snap","etc"]],["planner","제휴 플래너"],["location","위치"],["features","특징","area"],["price","견적가 (원)","num"],["listPrice","정가 (원)","num"],["listNote","정가 메모"],["quoteDelta","플래너 견적 대비 추가금 (원)","num"],["priceNote","견적 조건","area"],["extraFees","추가금·조건","area"],["insta","인스타그램 링크"],["blog","저장한 블로그 후기 링크"],["blogSummary","후기 요약","area"],["source","출처"],["memo","메모","area"]],
+  halls:[["name","웨딩홀 이름"],["zone","권역","select",ZONES],["gu","구"],["dong","동"],["type","유형","select",["",...HALL_TYPES]],["mealType","식사 형식"],["mealMin","식대 최소 (1인, 원)","num"],["mealMax","식대 최대 (1인, 원)","num"],["rental","대관료 (원)","num"],["rentalNote","대관료 비고","area"],["minGuests","최소 보증인원","num"],["maxGuests","최대 수용","num"],["times","가능 시간대 (예: 토 11:00 / 13:30 / 17:00)","wide"],["interval","예식 간격 (분)","num"],["flowerFee","꽃장식 (원)","num"],["productionFee","연출·음향 (원)","num"],["snapFee","본식 스냅·영상 (원)","num"],["otherOptions","기타 옵션비용","area"],["includes","기본 포함","area"],["station","가까운 역"],["walk","역 도보 (분)","num"],["parking","주차 (대)","num"],["address","주소","wide"],["phone","전화"],["homepage","홈페이지"],["insta","인스타그램"],["naverPlace","네이버 플레이스"],["blog","저장한 블로그 후기"],["source","출처","wide"],["memo","메모","area"]],
+  homes:[["name","단지명"],["kind","유형","select",["매매","전세"]],["gu","구"],["dong","동"],["area","전용면적 (㎡)","num"],["price","매매 호가 (원)","num"],["kb","KB시세 (원)","num"],["recent","최근 실거래가 (원)","num"],["jeonse","전세가 (원)","num"],["units","세대수","num"],["year","준공연도","num"],["station","가까운 역"],["walk","역 도보 (분)","num"],["school","배정 초등학교"],["visit","임장일"],["agent","부동산·연락처"],["link","매물 링크","wide"],["memo","메모","area"]]
+};
+const SCORE_KIND=(col,d)=>col==="halls"?"hall":col==="planners"?"planner":col==="homes"?"home":(["studio","dress","makeup"].includes(d.cat)?d.cat:"studio");
+function openDrawer(col,id){ drawer={col,id}; renderDrawer(); setTimeout(()=>{const i=$("#drawerRoot input");if(i)i.focus();},30); }
+function closeDrawer(){ drawer=null; $("#drawerRoot").innerHTML=""; schedule(); }
+function renderDrawer(){
+  if(!drawer) return; const {col,id}=drawer; const d=state[col][id]; if(!d){closeDrawer();return;}
+  const kind=SCORE_KIND(col,d), f=FIELDS[col]||[];
+  const field=([k,label,type,opts])=>{
+    const v=d[k]; const full=type==="area"||type==="wide"; let input;
+    if(type==="select") input=`<select data-dk="${k}">${opts.map(o=>`<option value="${esc(o)}" ${v===o?"selected":""}>${esc(CAT_LABEL[o]||o||"—")}</option>`).join("")}</select>`;
+    else if(type==="area") input=`<textarea data-dk="${k}">${esc(v)}</textarea>`;
+    else if(type==="num") input=`<input type="number" data-dk="${k}" data-num="1" value="${isNum(v)?v:""}">`;
+    else input=`<input data-dk="${k}" value="${esc(v)}">`;
+    return `<label style="${full?"grid-column:1/-1":""}">${label}${input}</label>`;
+  };
+  const st=col==="halls"?H_STATUS:col==="homes"?HOME_STATUS:V_STATUS;
+  const checks=col==="homes"?`<div><div class="muted small">임장 체크리스트</div>${CHECKS.map(([g,items])=>`<div class="checkgroup"><h4>${g}</h4>${items.map(([k,l])=>`<label><input type="checkbox" data-dcheck="${k}" ${d.checks&&d.checks[k]?"checked":""}> ${l}</label>`).join("")}</div>`).join("")}</div>`:"";
+  const hallExtra=col==="halls"?`<div style="display:flex;gap:8px;align-items:center"><button class="btn small ${S().mainHall===id?"primary":""}" data-dmain>${S().mainHall===id?"기준 홀로 지정됨":"기준 홀로 지정 (예산 반영)"}</button>${d.plannerQuote?`<span class="pill src">${esc(d.plannerQuote.src)}</span>`:""}</div>`:"";
+  $("#drawerRoot").innerHTML=`<div class="scrim" data-close></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(d.name)} 편집">
+    <header><h2>${esc(d.name||"새 항목")}</h2><div style="display:flex;gap:6px"><button class="btn small danger" data-ddel>삭제</button><button class="btn small" data-close>닫기</button></div></header>
+    <div class="content">
+      <div class="photo">${photoSrc(d)?`<img src="${esc(photoSrc(d))}" alt="대표 사진">`:`<div class="thumb empty" style="width:120px;height:150px">사진 없음</div>`}<div style="display:grid;gap:6px"><button class="btn small" data-dphoto>${photoSrc(d)?"사진 바꾸기":"대표 사진 올리기"}</button>${photoSrc(d)?`<button class="btn small ghost" data-dphotodel>사진 지우기</button>`:""}<span class="muted small">${col==="homes"?"임장 때 찍은 사진을 올려 두세요":"인스타그램 게시물을 캡처해서 올리면 돼요"}</span></div></div>
+      ${hallExtra}
+      <label>상태<select data-dk="status">${st.map(o=>`<option ${d.status===o?"selected":""}>${o}</option>`).join("")}</select></label>
+      <div><div class="muted small" style="margin-bottom:4px">평가 (1~5)</div><div class="scores">${SCORE[kind].map(([k,l])=>`<label>${l}<select data-dscore="${k}"><option value=""></option>${[1,2,3,4,5].map(n=>`<option ${d.scores&&d.scores[k]===n?"selected":""}>${n}</option>`).join("")}</select></label>`).join("")}</div></div>
+      ${checks}
+      <div class="two">${f.map(field).join("")}</div>
+      ${col!=="planners"?`<div class="links"><a href="${blogLink((d.name||"").replace(/\s*\(.*\)/,""))}" target="_blank" rel="noopener">네이버 블로그 후기 검색</a>${d.insta?`<a href="${esc(d.insta)}" target="_blank" rel="noopener">인스타그램 열기</a>`:""}</div>`:""}
+    </div></aside>`;
+  const root=$("#drawerRoot");
+  root.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeDrawer);
+  root.querySelector("[data-ddel]").onclick=()=>{ if(confirm(`'${d.name||"이 항목"}'을(를) 삭제할까요?`)){ const c=col,i=id; closeDrawer(); removeDoc(c,i);} };
+  const pb=root.querySelector("[data-dphoto]"); if(pb) pb.onclick=()=>pickPhoto(col,id);
+  const pd=root.querySelector("[data-dphotodel]"); if(pd) pd.onclick=()=>{ write(col,id,{photo:"",photoData:""}); setTimeout(renderDrawer,0); };
+  const dm=root.querySelector("[data-dmain]"); if(dm) dm.onclick=()=>{ write("settings","main",{mainHall:id}); setTimeout(renderDrawer,0); };
+  root.querySelectorAll("[data-dk]").forEach(el=>{
+    const handler=()=>{ let v=el.value; if(el.dataset.num){ v=v===""?null:Number(v); } write(col,id,{[el.dataset.dk]:v},el.tagName!=="SELECT"); if(el.dataset.dk==="name") root.querySelector("header h2").textContent=v||"새 항목"; };
+    el.addEventListener(el.tagName==="SELECT"?"change":"input",handler);
+  });
+  root.querySelectorAll("[data-dscore]").forEach(el=>el.addEventListener("change",()=>write(col,id,{scores:{[el.dataset.dscore]:el.value===""?null:Number(el.value)}},true)));
+  root.querySelectorAll("[data-dcheck]").forEach(el=>el.addEventListener("change",()=>write(col,id,{checks:{[el.dataset.dcheck]:el.checked}},true)));
+  root.querySelector("aside").addEventListener("keydown",e=>{ if(e.key==="Escape") closeDrawer(); });
+}
+
+/* ================= photos ================= */
+let photoTarget=null;
+function pickPhoto(col,id){ photoTarget={col,id}; $("#filePick").value=""; $("#filePick").click(); }
+async function fileToStored(file){
+  if(assets){ try{ const r=await assets.upload(file,file.type?undefined:{type:"image/jpeg"}); return {photo:r.id,photoData:""}; }catch(e){ if(e&&e.code&&!/unavailable|not_granted|capability/.test(e.code)) toast("사진을 올리지 못했어요 ("+e.code+")"); } }
+  const data=await shrink(file,720,0.82); return {photo:"",photoData:data};
+}
+function shrink(file,max,q){ return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{ const s=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg",q)); }; img.onerror=rej; img.src=url; }); }
+$("#filePick").addEventListener("change",async e=>{ const f=e.target.files[0]; if(!f||!photoTarget) return; setSync("사진 올리는 중…"); const p=await fileToStored(f); write(photoTarget.col,photoTarget.id,p); if(drawer) setTimeout(renderDrawer,0); });
+async function addDresses(files){ for(const f of files){ if(!f.type.startsWith("image/")) continue; setSync("사진 올리는 중…"); const p=await fileToStored(f); await create("dresses",Object.assign({shop:"",silhouette:"",use:"",rating:0,memo:"",createdAt:Date.now()},p)); } }
+$("#filePickMulti").addEventListener("change",e=>addDresses([...e.target.files]));
+
+/* ================= events ================= */
+function setPath(path,val){ const [a,b]=path.split("."); ui[a][b]=val; saveUI(); }
+let houseT=null;
+function bindMain(){
+  const m=$("#main");
+  m.querySelectorAll("[data-filter]").forEach(el=>{
+    const ev=el.type==="search"||el.type==="number"?"input":"change";
+    el.addEventListener(ev,()=>{ const v=el.type==="checkbox"?el.checked:el.value; setPath(el.dataset.filter,v); if(el.dataset.filter==="hall.zone") ui.hall.gu=""; if(ev==="input"){ clearTimeout(el._t); el._t=setTimeout(()=>{ const pos=el.selectionStart; el.blur(); render(); const n=$(`[data-filter="${el.dataset.filter}"]`); if(n){n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){}} },350);} else render(); });
+  });
+  m.querySelectorAll("[data-set]").forEach(el=>{
+    const ev=el.type==="checkbox"||el.tagName==="SELECT"||el.type==="date"?"change":"input";
+    el.addEventListener(ev,()=>{
+      let v; if(el.type==="checkbox") v=el.checked; else if(el.type==="number"){ v=el.value===""?null:Number(el.value)*(Number(el.dataset.unit)||1); } else v=el.value;
+      deepMerge(state.settings,pathObj(el.dataset.set,v));
+      const hint=m.querySelector(`[data-hint="${el.dataset.set}"]`); if(hint) hint.textContent=isNum(v)?eok(v):"";
+      clearTimeout(houseT); houseT=setTimeout(()=>write("settings","main",pathObj(el.dataset.set,v),true),500);
+      if(ui.tab==="house") refreshHouse(); else if(el.type!=="number") schedule();
+      if(el.dataset.set==="weddingDate") renderHead();
+    });
+    if(el.type==="number"&&ui.tab!=="house") el.addEventListener("change",()=>{ el.blur(); schedule(); });
+  });
+  m.querySelectorAll("[data-set-mode]").forEach(b=>b.onclick=()=>{ write("settings","main",{house:{mode:b.dataset.setMode}}); });
+  const drop=$("#drop");
+  if(drop){ drop.onclick=()=>$("#filePickMulti").click(); drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("#filePickMulti").click();}};
+    drop.ondragover=e=>{e.preventDefault();drop.classList.add("over");}; drop.ondragleave=()=>drop.classList.remove("over");
+    drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");addDresses([...e.dataTransfer.files]);}; }
+  if(ui.tab==="house") refreshHouse();
+}
+function refreshBudgetNumbers(){
+  if(ui.tab!=="budget") return; const B=budgetCalc(), s=S();
+  B.items.forEach(it=>{ const el=document.querySelector(`[data-eff="${it.id}"]`); if(el) el.textContent=man(it._e.eff); });
+  Object.entries(B.groups).forEach(([g,G])=>{ const el=document.querySelector(`[data-gt="${CSS.escape(g)}"]`); if(el) el.textContent=manWon(G.total); });
+  const t=$("#bTotal"); if(t) t.textContent=manWon(B.wedding);
+  const l=$("#bLeft"); if(l){ l.textContent=manWon(Math.abs(s.target-B.wedding)); l.className=B.wedding>s.target?"no":"ok"; }
+  const hs=$("#bHouse"); if(hs) hs.textContent=manWon(B.houseSetup);
+  B.items.forEach(it=>(it.subs||[]).forEach((x,i)=>{ const el=document.querySelector(`[data-subeff="${it.id}:${i}"]`); if(el) el.textContent=man(isNum(x.amount)?x.amount:(isNum(x.cap)?x.cap:0)); }));
+}
+function budgetInput(t){
+  const id=t.dataset.id, it=state.budget[id]; if(!it) return;
+  if(t.dataset.b){ const k=t.dataset.b; let v=t.value; if(k==="amount"||k==="cap") v=v===""?null:Number(v)*10000; write("budget",id,{[k]:v},true); }
+  else if(t.dataset.sub!=null){ const subs=clone(it.subs||[]); const i=+t.dataset.sub, k=t.dataset.key; subs[i][k]=k==="name"?t.value:(t.value===""?null:Number(t.value)*10000); write("budget",id,{subs},true); }
+  else if(t.dataset.meta){ write("budget",id,{meta:{[t.dataset.meta]:t.value}},true); }
+  refreshBudgetNumbers();
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-tab],[data-open],[data-act],[data-sort]"); if(!t) return;
+  if(t.dataset.tab&&!t.dataset.act){ ui.tab=t.dataset.tab; saveUI(); if(document.activeElement) document.activeElement.blur(); render(); window.scrollTo(0,0); return; }
+  if(t.dataset.open){ openDrawer(t.dataset.open,t.dataset.id); return; }
+  if(t.dataset.sort){ const k=t.dataset.tabkey, key=t.dataset.sort; const s=ui.sort[k]; ui.sort[k]={key,dir:s&&s.key===key&&s.dir==="desc"?"asc":"desc"}; saveUI(); render(); return; }
+  const a=t.dataset.act;
+  if(a==="add"){ const col=t.dataset.col; let d;
+    if(col==="halls") d={name:"새 웨딩홀",zone:"강남권",gu:"",dong:"",type:"",status:"관심",scores:{},memo:"",tags:[],mood:[],source:"직접 입력"};
+    else if(col==="planners") d={name:"새 플래너",kind:"동행 플래너",status:"관심",scores:{},memo:""};
+    else if(col==="homes") d={name:"새 단지",kind:S().house.mode==="buy"?"매매":"전세",gu:"",dong:"",status:"관심",scores:{},checks:{},memo:""};
+    else d={name:"새 업체",cat:t.dataset.cat,planner:"",status:"관심",scores:{},memo:"",price:null,quoteDelta:null};
+    create(col,d).then(id=>openDrawer(col,id)); return; }
+  if(a==="photo"){ pickPhoto(t.dataset.col,t.dataset.id); return; }
+  if(a==="heart"){ const r=state.dresses[t.dataset.id]; const n=Number(t.dataset.n); write("dresses",t.dataset.id,{rating:(r&&r.rating===n)?n-1:n}); return; }
+  if(a==="del"){ if(confirm("이 드레스를 보드에서 지울까요?")) removeDoc(t.dataset.col,t.dataset.id); return; }
+  if(a==="addExtra"){ create("extras",{name:"새 항목",range:"",cat:"기타",amount:null,include:true,order:999}); return; }
+  if(a==="subToggle"){ ui.open=ui.open||{}; ui.open[t.dataset.id]=!ui.open[t.dataset.id]; saveUI(); render(); return; }
+  if(a==="subAdd"){ const it=state.budget[t.dataset.id]; const subs=clone(it.subs||[]); subs.push({name:"새 세부 항목",amount:null,cap:null}); write("budget",t.dataset.id,{subs}); return; }
+  if(a==="subDel"){ const it=state.budget[t.dataset.id]; const subs=clone(it.subs||[]); subs.splice(+t.dataset.i,1); write("budget",t.dataset.id,{subs}); return; }
+  if(a==="bAdd"){ create("budget",{group:t.dataset.group,name:"새 항목",link:"",status:"미정",amount:null,cap:null,payer:"공동",memo:"",order:900+Object.keys(state.budget).length}); return; }
+  if(a==="dp"){ openDressPrice(t.dataset.key); return; }
+  if(a==="dpAdd"){ const r=dressPriceIndex().by[t.dataset.key]; if(!r) return; const x=r.p["제이웨딩"]||r.p["다이렉트"]||r.p["베리굿"]; const pl=Object.keys(r.p).join("·");
+    create("vendors",{cat:"dress",name:r.name,planner:pl,location:"",features:"",price:null,listPrice:x.main,listNote:`본식 정가 (${Object.keys(r.p).find(k=>r.p[k]===x)})`,quoteDelta:null,priceNote:"",extraFees:`헬퍼 ${x.helper||""} / 피팅비 ${x.fitting||""}`,insta:"",blog:"",blogSummary:"",status:"관심",scores:{},memo:"",photo:"",source:"플래너 가격표"}); toast(`${r.name}을(를) 드레스 후보에 추가했어요`); return; }
+});
+document.addEventListener("change",e=>{
+  const t=e.target; if(t.closest&&t.closest("#main")&&(t.dataset.b||t.dataset.sub!=null||t.dataset.meta)){ budgetInput(t); if(t.dataset.b==="status"||t.dataset.b==="payer") schedule(); return; }
+  const a=t.dataset&&t.dataset.act; if(!a) return;
+  if(a==="score") write(t.dataset.col,t.dataset.id,{scores:{[t.dataset.key]:t.value===""?null:Number(t.value)}});
+  else if(a==="status") write(t.dataset.col,t.dataset.id,{status:t.value});
+  else if(a==="setMain") write("settings","main",{mainHall:t.dataset.id});
+  else if(a==="qsel") write("quotes",t.dataset.id,{selected:{[t.dataset.key]:Number(t.value)}});
+  else if(a==="exInc") write("extras",t.dataset.id,{include:t.checked});
+  else if(a==="dsel") write("dresses",t.dataset.id,{[t.dataset.key]:t.value});
+});
+document.addEventListener("input",e=>{
+  const t=e.target; if(t.closest&&t.closest("#main")&&(t.dataset.b||t.dataset.sub!=null||t.dataset.meta)&&t.type==="number"){ budgetInput(t); return; }
+  const a=t.dataset&&t.dataset.act; if(!a) return;
+  if(a==="guests"){ const v=t.value===""?0:Number(t.value); deepMerge(state.settings,{guests:v}); clearTimeout(t._t); t._t=setTimeout(()=>{ write("settings","main",{guests:v}); t.blur(); render(); const n=$('[data-act="guests"]'); if(n){n.focus();} },500); }
+  else if(a==="exAmt"){ const v=t.value===""?null:Number(t.value); clearTimeout(t._t); t._t=setTimeout(()=>write("extras",t.dataset.id,{amount:v}),400); }
+  else if(a==="dfield"){ clearTimeout(t._t); t._t=setTimeout(()=>write("dresses",t.dataset.id,{[t.dataset.key]:t.value}),450); }
+});
+
+/* ================= export ================= */
+$("#exportBtn").addEventListener("click",async()=>{
+  if(!window.XLSX||!downloads) return;
+  const wb=XLSX.utils.book_new(); const s=S();
+  const sc=(r,kind)=>Object.fromEntries(SCORE[kind].map(([k,l])=>[l,r.scores&&r.scores[k]!=null?r.scores[k]:""]));
+  const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{}]),name);
+  const B=budgetCalc();
+  const brows=[]; B.items.forEach(it=>{ brows.push({그룹:it.group,항목:it.name,세부:"",상태:it.status,금액:isNum(it._e.amount)?Math.round(it._e.amount):"",상한선:it.cap??"",반영액:Math.round(it._e.eff),부담:it.payer,메모:it.memo}); (it.subs||[]).forEach(x=>brows.push({그룹:it.group,항목:it.name,세부:x.name,상태:"",금액:x.amount??"",상한선:x.cap??"",반영액:isNum(x.amount)?x.amount:(x.cap??""),부담:"",메모:""})); });
+  add("전체예산",brows);
+  add("플래너",list("planners").map(r=>Object.assign({플래너:r.name,유형:r.kind,담당:r.manager,연락처:r.phone,특징:r.features,혜택:r.benefits,조건:r.fee},sc(r,"planner"),{평균:avg(r.scores,"planner")??"",상태:r.status,메모:r.memo})));
+  const q=mainQuote(); if(q) add("스드메견적",(q.items||[]).map(i=>({품목:i.cat,업체:i.vendor,상품:i.product,판매가:i.list,할인가:i.sale,합계반영:i.count===false?"X":"O"})));
+  add("추가비용",list("extras").map(x=>({구분:x.cat,항목:x.name,범위:x.range,예상금액:x.amount??"",반영:x.include?"O":""})));
+  ["studio","dress","makeup"].forEach(c=>add(CAT_LABEL[c],list("vendors").filter(v=>v.cat===c).map(r=>Object.assign({업체:r.name,제휴플래너:r.planner,위치:r.location,특징:r.features,견적가:r.price??"",정가:r.listPrice??"",견적대비:r.quoteDelta??"",추가금:r.extraFees,인스타:r.insta,후기링크:r.blog},sc(r,c),{평균:avg(r.scores,c)??"",상태:r.status,메모:r.memo}))));
+  const dp=[]; Object.values(dressPriceIndex().by).forEach(r=>Object.entries(r.p).forEach(([p,x])=>dp.push({드레스샵:r.name,플래너:p,본식:x.main,본식최대:x.mainMax??"",촬영본식:x.combo,촬영본식최대:x.comboMax??"",헬퍼:x.helper,피팅비:x.fitting,디자인추가금:x.design,위약금:x.penalty})));
+  add("드레스정가",dp);
+  const g=s.guests||0;
+  add("웨딩홀",list("halls").map(r=>Object.assign({웨딩홀:r.name,권역:r.zone,구:r.gu,동:r.dong,유형:r.type,식대최소:r.mealMin??"",식대최대:r.mealMax??"",대관료:r.rental??"",대관료비고:r.rentalNote,최소보증:r.minGuests??"",최대:r.maxGuests??"",[`예상총액(${g}명)`]:hallEstimate(r,g)!=null?Math.round(hallEstimate(r,g)):"",가능시간대:r.times,꽃장식:r.flowerFee??"",연출:r.productionFee??"",본식스냅:r.snapFee??"",기타옵션:r.otherOptions,역:r.station,도보분:r.walk??"",주차:r.parking??"",주소:r.address,전화:r.phone},sc(r,"hall"),{평균:avg(r.scores,"hall")??"",상태:r.status,메모:r.memo,출처:r.source})));
+  add("신혼집후보",list("homes").map(r=>{const c=homeCalc(r,s); return Object.assign({단지:r.name,유형:r.kind,구:r.gu,동:r.dong,전용:r.area??"",호가:r.price??"",KB시세:r.kb??"",실거래:r.recent??"",전세가:r.jeonse??"",자금판정:c?(c.ok?"가능":"부족"):"",차액:c?Math.round(c.gap):"",월부담:c?Math.round(c.monthly):""},sc(r,"home"),{평균:avg(r.scores,"home")??"",상태:r.status,임장일:r.visit,메모:r.memo});}));
+  add("드레스보드",list("dresses").map(r=>({샵:r.shop,실루엣:r.silhouette,용도:r.use,하트:r.rating,메모:r.memo})));
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  try{ await downloads.save({filename:"결혼준비_장부.xlsx",data:buf}); }catch(e){ if(e&&e.code!=="declined") toast("내보내지 못했어요 ("+(e.code||"오류")+")"); }
+});
+
+render(); initStore();
+})();
+
+</script>
+</body>
+</html>
