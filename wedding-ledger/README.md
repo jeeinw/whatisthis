@@ -39,6 +39,15 @@ cp .env.example .env.local   # Supabase URL / anon key / service role key 채우
 | `lib/db.ts` | 테이블 행 ↔ 계산용 `Ledger` 변환 |
 | `supabase/migrations/` | 스키마 + RLS + Storage 버킷 |
 | `scripts/import-seed.ts` | seed 적재 |
+| `components/store.tsx` | 전체 로드 → 낙관적 업데이트 → 문서별 450ms 디바운스 저장 |
+| `components/tabs/` | 탭 10개 (legacy 화면 그대로) |
+| `proxy.ts`, `app/login`, `app/auth/*` | 매직링크 로그인, 비로그인 시 /login |
+
+## 로그인 설정 (Supabase 대시보드)
+
+- Authentication → URL Configuration: **Site URL**을 배포 주소로, **Redirect URLs**에 `http://localhost:3000/auth/callback`과 `https://<배포 주소>/auth/callback` 추가
+- 새 가입 막기 권장 (로그인 화면은 `shouldCreateUser: false`)
+- 접근 허용은 `allowed_emails` 테이블 (Authentication 사용자 목록만으로는 데이터가 안 보임)
 
 ## 보안
 
