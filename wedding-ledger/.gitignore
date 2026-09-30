@@ -44,3 +44,6 @@ next-env.d.ts
 /private/
 # 이관 데이터 (계약·메모 포함, 공개 저장소라 제외) — import 후에는 Supabase가 원본
 /seed/
+
+# 환경변수 템플릿은 커밋
+!.env.example
