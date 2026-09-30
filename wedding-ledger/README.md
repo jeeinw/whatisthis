@@ -20,6 +20,7 @@ cp .env.example .env.local   # Supabase URL / anon key / service role key 채우
    npm run import-seed                # upsert
    npm run import-seed -- --replace   # DB를 seed와 똑같이 (seed에 없는 행 삭제)
    ```
+   프록시 뒤(Claude Code 클라우드 세션 등)에서는 `NODE_USE_ENV_PROXY=1 npm run import-seed` — Node 내장 fetch는 `HTTPS_PROXY`를 기본으로 읽지 않는다.
 
 ## 명령어
 
