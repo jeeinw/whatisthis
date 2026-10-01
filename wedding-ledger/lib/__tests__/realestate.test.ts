@@ -63,7 +63,7 @@ describe("실거래가 API", () => {
   });
 
   it("같은 평형의 소수점 차이(84.8/84.9, 59.9/60)는 한 줄로", () => {
-    const t = (area: number) => ({ apt: "a", dong: "", area, date: "2026-09-01", price: 1, floor: 1, canceled: false });
+    const t = (area: number) => ({ apt: "a", dong: "", jibun: "", area, date: "2026-09-01", price: 1, floor: 1, canceled: false });
     expect(summarize([t(84.8), t(84.9), t(59.9), t(60)], []).map((x) => [x.area, x.trade.count])).toEqual([[60, 2], [85, 2]]);
   });
 
