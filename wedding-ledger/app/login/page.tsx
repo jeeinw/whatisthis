@@ -1,6 +1,25 @@
 "use client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+
+const LINK_ERRORS: Record<string, string> = {
+  otp_expired: "로그인 링크가 만료됐거나 이미 사용됐어요. 새 링크를 받아 주세요.",
+  bad_code_verifier: "링크를 요청한 브라우저와 다른 곳에서 열었어요. 이 화면에서 다시 요청한 뒤, 같은 브라우저로 링크를 열어 주세요.",
+  flow_state_not_found: "링크를 요청한 브라우저와 다른 곳에서 열었어요. 이 화면에서 다시 요청한 뒤, 같은 브라우저로 링크를 열어 주세요.",
+};
+
+function linkErrorText(code: string) {
+  if (LINK_ERRORS[code]) return LINK_ERRORS[code];
+  if (/code verifier|flow state|pkce/i.test(code)) return LINK_ERRORS.bad_code_verifier;
+  return `로그인하지 못했어요 (${code}). 새 링크를 받아 주세요.`;
+}
+
+function LinkError() {
+  const err = useSearchParams().get("error");
+  return err ? <p className="note small">{linkErrorText(err)}</p> : null;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,6 +47,9 @@ export default function LoginPage() {
         J<span className="amp">&amp;</span>D
       </div>
       <div className="sub">결혼 준비 장부</div>
+      <Suspense>
+        <LinkError />
+      </Suspense>
       {state === "sent" ? (
         <p className="note">{email} 로 로그인 링크를 보냈어요. 메일에서 링크를 눌러 주세요.</p>
       ) : (
