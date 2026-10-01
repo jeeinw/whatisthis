@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
   // Supabase가 검증 단계에서 실패하면 error_code 를 붙여 보낸다 (예: otp_expired)
   const upstream = url.searchParams.get("error_code") || url.searchParams.get("error");
 
+  // implicit 흐름 링크는 토큰을 URL 해시(#…)로 보낸다. 해시는 서버에 오지 않고 리다이렉트를 따라가므로
+  // 쿼리가 비어 있으면 /login 으로 넘겨 거기서 세션을 만든다.
+  if (!upstream && !code && !tokenHash) return NextResponse.redirect(new URL("/login", url.origin));
+
   let reason: string | null = upstream;
   if (!reason) {
     const supabase = await createClient();
