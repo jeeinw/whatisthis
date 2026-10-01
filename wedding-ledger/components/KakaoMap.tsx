@@ -33,14 +33,16 @@ function loadKakao(): Promise<Kakao> {
   return loading;
 }
 
-/** 주소 → 좌표, 실패하면 키워드(장소) 검색. */
+/** 주소 → 좌표, 실패하면 키워드(장소) 검색. 빈 문자열은 건너뛴다. */
 export async function geocode(address: string, keyword?: string): Promise<{ lat: number; lng: number } | null> {
   const kakao = await loadKakao();
   const S = kakao.maps.services;
-  const byAddr = await new Promise<{ lat: number; lng: number } | null>((res) =>
-    new S.Geocoder().addressSearch(address, (r: any[], st: string) => res(st === S.Status.OK && r[0] ? { lat: +r[0].y, lng: +r[0].x } : null)),
-  );
-  if (byAddr || !keyword) return byAddr;
+  const byAddr = address.trim()
+    ? await new Promise<{ lat: number; lng: number } | null>((res) =>
+        new S.Geocoder().addressSearch(address, (r: any[], st: string) => res(st === S.Status.OK && r[0] ? { lat: +r[0].y, lng: +r[0].x } : null)),
+      )
+    : null;
+  if (byAddr || !keyword?.trim()) return byAddr;
   return new Promise((res) =>
     new S.Places().keywordSearch(keyword, (r: any[], st: string) => {
       if (st !== S.Status.OK || !r.length) return res(null);
@@ -48,6 +50,14 @@ export async function geocode(address: string, keyword?: string): Promise<{ lat:
       res({ lat: +apt.y, lng: +apt.x });
     }),
   );
+}
+
+/** 위치를 찾을 근거(구 또는 법정동코드 + 이름)가 있는 후보만. 이 값이 바뀌면 좌표를 다시 찾는다. */
+export function geoKeyOf(h: Pick<Home, "name" | "aptNm" | "gu" | "dong" | "jibun" | "lawdCd">): string | null {
+  const name = (h.aptNm || h.name || "").trim();
+  const where = (h.gu || "").trim() || (h.lawdCd || "").trim();
+  if (!name || !where || name === "새 단지") return null;
+  return [name, h.gu ?? "", h.dong ?? "", h.jibun ?? "", h.lawdCd ?? ""].join("|");
 }
 
 export interface MapPoint {
@@ -130,19 +140,21 @@ export function HomesMap({ extra }: { extra?: MapPoint | null }) {
   useEffect(() => {
     if (!KEY) return;
     for (const h of homes) {
-      if ((isNum(h.lat) && isNum(h.lng)) || tried.current.has(h.id) || !h.name) continue;
-      tried.current.add(h.id);
-      const sido = h.lawdCd && !h.lawdCd.startsWith("11") ? "" : "서울 ";
-      const addr = `${sido}${h.gu ?? ""} ${h.dong ?? ""} ${h.jibun ?? ""}`.trim();
-      const kw = `${h.gu ?? ""} ${h.dong ?? ""} ${h.aptNm || h.name}`.trim();
-      geocode(h.jibun ? addr : "", kw)
-        .then((p) => p && write("homes", h.id, { lat: p.lat, lng: p.lng }))
+      const key = geoKeyOf(h);
+      if (!key || h.geoKey === key || tried.current.has(`${h.id}:${key}`)) continue;
+      tried.current.add(`${h.id}:${key}`);
+      const seoul = !h.lawdCd || h.lawdCd.startsWith("11");
+      const addr = h.jibun ? `${seoul ? "서울 " : ""}${h.gu ?? ""} ${h.dong ?? ""} ${h.jibun}`.trim() : "";
+      const kw = `${seoul ? "서울 " : ""}${h.gu ?? ""} ${h.dong ?? ""} ${h.aptNm || h.name}`.replace(/\s+/g, " ").trim();
+      geocode(addr, kw)
+        .then((p) => write("homes", h.id, p ? { lat: p.lat, lng: p.lng, geoKey: key } : { lat: null, lng: null, geoKey: key }))
         .catch(() => {});
     }
   }, [homes, write]);
 
   const points: MapPoint[] = homes
-    .filter((h) => isNum(h.lat) && isNum(h.lng))
+    // 좌표를 찾은 뒤 이름·위치가 바뀌었으면(geoKey 불일치) 다시 찾을 때까지 숨긴다
+    .filter((h) => isNum(h.lat) && isNum(h.lng) && h.geoKey === geoKeyOf(h))
     .map((h) => ({
       key: h.id,
       kind: "home" as const,

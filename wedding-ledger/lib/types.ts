@@ -219,6 +219,8 @@ export interface Home {
   /** 지도 좌표 (한 번 찾으면 저장) */
   lat?: number | null;
   lng?: number | null;
+  /** 좌표를 찾을 때 쓴 이름·위치 (바뀌면 다시 찾음) */
+  geoKey?: string;
 }
 
 export interface Dress {
