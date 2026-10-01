@@ -245,8 +245,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const patch = pending.current.get(key);
       if (!patch) return;
       pending.current.delete(key);
-      const req = supabase.rpc("patch_doc", { tbl: TABLE[col], doc_id: id, patch });
-      inflight.current.set(key, Promise.resolve(req).then(() => undefined));
+      // Postgrest 빌더는 then 할 때마다 요청을 다시 보내므로 한 번만 Promise로 만든다
+      const req = Promise.resolve(supabase.rpc("patch_doc", { tbl: TABLE[col], doc_id: id, patch }));
+      inflight.current.set(key, req.then(() => undefined));
       let { error } = await req;
       inflight.current.delete(key);
       if (error && missingFn(error)) {

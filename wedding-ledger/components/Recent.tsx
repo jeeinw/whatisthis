@@ -15,9 +15,9 @@ const COL: Record<string, { label: string; tab: string }> = {
   homes: { label: "임장 후보", tab: "house" },
   priceLists: { label: "드레스 가격표", tab: "dprice" },
   guests: { label: "하객", tab: "guests" },
-  gifts: { label: "축의금", tab: "gifts" },
-  payments: { label: "지불 일정", tab: "payments" },
-  tasks: { label: "준비 체크리스트", tab: "tasks" },
+  gifts: { label: "축의금", tab: "guests" },
+  payments: { label: "지불 일정", tab: "schedule" },
+  tasks: { label: "준비 체크리스트", tab: "schedule" },
   settings: { label: "설정", tab: "summary" },
 };
 
