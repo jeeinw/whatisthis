@@ -4,13 +4,14 @@ import { closestArea, resolveLawd } from "@/lib/realestate";
 import { eok } from "@/lib/format";
 import type { Home } from "@/lib/types";
 import { useStore } from "./store";
-import { DealList, StatsTable, useRealPrice } from "./realestate";
+import { DealList, StatsTable, TrendBox, useRealPrice } from "./realestate";
 
-/** 임장 후보 서랍 안의 국토부 실거래가 (최근 6개월, 전용면적별 + 거래 목록). */
+/** 임장 후보 서랍 안의 국토부 실거래가 (최근 6·12개월, 전용면적별 + 월별 추이 + 거래 목록). */
 export function RealPrice({ id, home }: { id: string; home: Omit<Home, "id"> }) {
   const { write, toast } = useStore();
   const { state, err, data, load } = useRealPrice();
   const [showList, setShowList] = useState(false);
+  const [months, setMonths] = useState(12);
   const lawd = resolveLawd(home);
   const apt = (home.aptNm || home.name || "").trim();
   const mine = data ? closestArea(data.stats, home.area) : null;
@@ -18,10 +19,16 @@ export function RealPrice({ id, home }: { id: string; home: Omit<Home, "id"> }) 
   return (
     <div className="panel" style={{ padding: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-        <h3 style={{ margin: 0 }}>국토부 실거래가 (최근 6개월)</h3>
-        <button className="btn small" onClick={() => lawd && load(lawd, apt, home.dong || undefined)} disabled={!lawd || !apt || state === "loading"}>
-          {state === "loading" ? "불러오는 중…" : state === "done" ? "다시 불러오기" : "불러오기"}
-        </button>
+        <h3 style={{ margin: 0 }}>국토부 실거래가</h3>
+        <span style={{ display: "flex", gap: 6 }}>
+          <select value={months} onChange={(e) => setMonths(Number(e.target.value))} aria-label="기간">
+            <option value={6}>최근 6개월</option>
+            <option value={12}>최근 12개월</option>
+          </select>
+          <button className="btn small" onClick={() => lawd && load(lawd, apt, home.dong || undefined, months)} disabled={!lawd || !apt || state === "loading"}>
+            {state === "loading" ? "불러오는 중…" : state === "done" ? "다시 불러오기" : "불러오기"}
+          </button>
+        </span>
       </div>
       {!lawd && <p className="muted small">‘구’에 서울 구 이름을 적거나, 서울 밖이면 ‘법정동코드’ 5자리를 입력해 주세요.</p>}
       {state === "error" && <p className="no small">{err}</p>}
@@ -31,6 +38,7 @@ export function RealPrice({ id, home }: { id: string; home: Omit<Home, "id"> }) 
             {data.matchedNames.length ? `찾은 단지: ${data.matchedNames.join(", ")}` : `‘${apt}’과 일치하는 거래가 없어요. ‘실거래 단지명’에 국토부 표기(예: 래미안퍼스티지)를 적어 보세요.`}
           </p>
           <StatsTable stats={data.stats} highlight={mine?.area} />
+          <TrendBox key={data.fetchedAt} data={data} initialArea={mine?.area} />
           {mine && (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
               {mine.trade.latest && (

@@ -245,3 +245,5 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
   .tablebox.cards input.cell,.tablebox.cards input.cell.memo{width:min(200px,55vw)}
   .tablebox.cards tr td:first-child input.cell{width:100%;text-align:left}
 }
+.lg{display:inline-block;width:14px;height:0;border-top:2.5px solid var(--ribbon);vertical-align:middle;margin-right:2px}
+.lg.lg-jeonse{border-top:2.5px dashed var(--sage)}

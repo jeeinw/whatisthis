@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { matchesApt, parseRtmsXml, recentMonths, rtmsUrl, summarize, toRent, toTrade, type Rent, type Trade } from "@/lib/realestate";
+import { matchesApt, monthlySeries, parseRtmsXml, recentMonths, rtmsUrl, summarize, toRent, toTrade, type Rent, type Trade } from "@/lib/realestate";
 
 /**
  * GET /api/realestate?lawd=11650&apt=래미안퍼스티지&dong=반포동&months=6
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
       months: yms,
       matchedNames: names,
       stats: summarize(trades, rents),
+      series: monthlySeries(trades, rents, yms),
       trades: trades.sort(byDate).slice(0, 100),
       rents: rents.sort(byDate).slice(0, 100),
       fetchedAt: new Date().toISOString(),

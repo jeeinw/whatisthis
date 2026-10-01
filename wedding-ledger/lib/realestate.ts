@@ -197,3 +197,46 @@ export const SEOUL_GU = Object.keys(SEOUL_LAWD);
 
 /** 법정동코드 → 구 이름 (서울만) */
 export const guOfLawd = (lawd: string) => Object.entries(SEOUL_LAWD).find(([, c]) => c === lawd)?.[0] ?? null;
+
+/* ---------- 월별 추이 ---------- */
+
+export interface MonthPoint {
+  /** 'YYYYMM' */
+  ym: string;
+  trade: { count: number; avg: number | null; min: number | null; max: number | null };
+  jeonse: { count: number; avg: number | null };
+}
+
+/**
+ * 전용면적(정수 ㎡)별 월별 매매·전세 평균. months 는 recentMonths() 결과(최신순)를 그대로 받아 오래된 달부터 돌려준다.
+ * 거래가 없는 달도 빈 점으로 남겨 그래프 x축이 일정하게 한다.
+ */
+export function monthlySeries(trades: Trade[], rents: Rent[], months: string[]): Record<number, MonthPoint[]> {
+  const asc = [...months].sort();
+  const ymOf = (d: string) => d.slice(0, 4) + d.slice(5, 7);
+  const live = trades.filter((t) => !t.canceled);
+  const jeonse = rents.filter((r) => r.monthly === 0);
+  const areas = [...new Set([...live.map((t) => areaKey(t.area)), ...jeonse.map((r) => areaKey(r.area))])];
+  const out: Record<number, MonthPoint[]> = {};
+  for (const area of areas) {
+    out[area] = asc.map((ym) => {
+      const ps = live.filter((t) => areaKey(t.area) === area && ymOf(t.date) === ym).map((t) => t.price);
+      const js = jeonse.filter((r) => areaKey(r.area) === area && ymOf(r.date) === ym).map((r) => r.deposit);
+      return {
+        ym,
+        trade: { count: ps.length, avg: avg(ps), min: ps.length ? Math.min(...ps) : null, max: ps.length ? Math.max(...ps) : null },
+        jeonse: { count: js.length, avg: avg(js) },
+      };
+    });
+  }
+  return out;
+}
+
+/** 첫 거래가 있는 달 대비 마지막 거래가 있는 달의 변화율 (%) */
+export function seriesChange(points: MonthPoint[], kind: "trade" | "jeonse"): number | null {
+  const has = points.filter((p) => p[kind].avg != null);
+  if (has.length < 2) return null;
+  const a = has[0][kind].avg as number;
+  const b = has[has.length - 1][kind].avg as number;
+  return Math.round(((b - a) / a) * 1000) / 10;
+}
