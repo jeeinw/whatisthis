@@ -1,11 +1,13 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CAT_LABEL, CHECKS, H_STATUS, HALL_TYPES, HOME_STATUS, SCORE, V_STATUS, ZONES } from "@/lib/constants";
 import { dressPriceIndex } from "@/lib/calc/dress";
 import { isNum, won } from "@/lib/format";
 import type { ScoreKind } from "@/lib/types";
 import { useStore } from "./store";
-import { blogLink, Photo, stripParen, TextCell, usePickPhoto } from "./shared";
+import { blogLink, Photo, stripParen, TextCell, usePickPhoto, useUploadPhoto } from "./shared";
+import { RealPrice } from "./RealPrice";
+import type { Home } from "@/lib/types";
 
 type FieldType = "text" | "select" | "area" | "wide" | "num";
 type Field = [key: string, label: string, type?: FieldType, opts?: string[]];
@@ -15,7 +17,7 @@ const FIELDS: Record<"planners" | "vendors" | "halls" | "homes", Field[]> = {
   planners: [["name", "플래너 이름"], ["kind", "유형", "select", ["동행 플래너", "비동행 플래너", "온라인·앱", "기타"]], ["manager", "담당자"], ["phone", "연락처"], ["address", "주소", "wide"], ["features", "특징", "area"], ["benefits", "혜택", "area"], ["fee", "비용·결제 조건", "area"], ["insta", "인스타그램 링크"], ["blog", "사이트·후기 링크"], ["source", "출처"], ["memo", "메모", "area"]],
   vendors: [["name", "업체명"], ["cat", "분류", "select", ["studio", "dress", "makeup", "snap", "etc"]], ["planner", "제휴 플래너"], ["location", "위치"], ["features", "특징", "area"], ["price", "견적가 (원)", "num"], ["listPrice", "정가 (원)", "num"], ["listNote", "정가 메모"], ["quoteDelta", "플래너 견적 대비 추가금 (원)", "num"], ["priceNote", "견적 조건", "area"], ["extraFees", "추가금·조건", "area"], ["insta", "인스타그램 링크"], ["blog", "저장한 블로그 후기 링크"], ["blogSummary", "후기 요약", "area"], ["source", "출처"], ["memo", "메모", "area"]],
   halls: [["name", "웨딩홀 이름"], ["zone", "권역", "select", ZONES], ["gu", "구"], ["dong", "동"], ["type", "유형", "select", ["", ...HALL_TYPES]], ["mealType", "식사 형식"], ["mealMin", "식대 최소 (1인, 원)", "num"], ["mealMax", "식대 최대 (1인, 원)", "num"], ["rental", "대관료 (원)", "num"], ["rentalNote", "대관료 비고", "area"], ["minGuests", "최소 보증인원", "num"], ["maxGuests", "최대 수용", "num"], ["times", "가능 시간대 (예: 토 11:00 / 13:30 / 17:00)", "wide"], ["interval", "예식 간격 (분)", "num"], ["flowerFee", "꽃장식 (원)", "num"], ["productionFee", "연출·음향 (원)", "num"], ["snapFee", "본식 스냅·영상 (원)", "num"], ["otherOptions", "기타 옵션비용", "area"], ["includes", "기본 포함", "area"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["parking", "주차 (대)", "num"], ["address", "주소", "wide"], ["phone", "전화"], ["homepage", "홈페이지"], ["insta", "인스타그램"], ["naverPlace", "네이버 플레이스"], ["blog", "저장한 블로그 후기"], ["source", "출처", "wide"], ["memo", "메모", "area"]],
-  homes: [["name", "단지명"], ["kind", "유형", "select", ["매매", "전세"]], ["gu", "구"], ["dong", "동"], ["area", "전용면적 (㎡)", "num"], ["price", "매매 호가 (원)", "num"], ["kb", "KB시세 (원)", "num"], ["recent", "최근 실거래가 (원)", "num"], ["jeonse", "전세가 (원)", "num"], ["units", "세대수", "num"], ["year", "준공연도", "num"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["school", "배정 초등학교"], ["visit", "임장일"], ["agent", "부동산·연락처"], ["link", "매물 링크", "wide"], ["memo", "메모", "area"]],
+  homes: [["name", "단지명"], ["kind", "유형", "select", ["매매", "전세"]], ["gu", "구"], ["dong", "동"], ["aptNm", "실거래 단지명 (국토부 표기, 비우면 단지명)"], ["lawdCd", "법정동코드 5자리 (서울은 구로 자동)"], ["area", "전용면적 (㎡)", "num"], ["price", "매매 호가 (원)", "num"], ["kb", "KB시세 (원)", "num"], ["recent", "최근 실거래가 (원)", "num"], ["jeonse", "전세가 (원)", "num"], ["units", "세대수", "num"], ["year", "준공연도", "num"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["school", "배정 초등학교"], ["visit", "임장일"], ["agent", "부동산·연락처"], ["link", "매물 링크", "wide"], ["memo", "메모", "area"]],
 };
 
 export function Drawer() {
@@ -126,19 +128,25 @@ function EntityDrawer({ col, id }: { col: "planners" | "vendors" | "halls" | "ho
           </div>
         </div>
         {col === "homes" && (
-          <div>
-            <div className="muted small">임장 체크리스트</div>
-            {CHECKS.map(([g, items]) => (
-              <div className="checkgroup" key={g}>
-                <h4>{g}</h4>
-                {items.map(([k, l]) => (
-                  <label key={k}>
-                    <input type="checkbox" checked={!!d.checks?.[k]} onChange={(e) => set({ checks: { [k]: e.target.checked } })} /> {l}
-                  </label>
-                ))}
-              </div>
-            ))}
-          </div>
+          <>
+            <SitePhotos id={id} photos={(d.photos as string[] | undefined) ?? []} />
+            <div className="checklist">
+              <div className="muted small">임장 체크리스트 · {Object.values(d.checks || {}).filter(Boolean).length}/{CHECKS.reduce((a, g) => a + g[1].length, 0)}</div>
+              {CHECKS.map(([g, items]) => (
+                <div className="checkgroup" key={g}>
+                  <h4>
+                    {g} <span className="muted small">{items.filter(([k]) => d.checks?.[k]).length}/{items.length}</span>
+                  </h4>
+                  {items.map(([k, l]) => (
+                    <label key={k} className={d.checks?.[k] ? "done" : ""}>
+                      <input type="checkbox" checked={!!d.checks?.[k]} onChange={(e) => set({ checks: { [k]: e.target.checked } })} /> {l}
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <RealPrice id={id} home={d as unknown as Omit<Home, "id">} />
+          </>
         )}
         <div className="two">{FIELDS[col].map(field)}</div>
         {col !== "planners" && (
@@ -192,5 +200,60 @@ function DressPriceDetail({ k }: { k: string }) {
         ))}
       </div>
     </aside>
+  );
+}
+
+/** 임장 현장 사진: 카메라로 바로 찍거나 앨범에서 여러 장 골라 올린다. */
+function SitePhotos({ id, photos }: { id: string; photos: string[] }) {
+  const { ledger, write, supabase, toast } = useStore();
+  const upload = useUploadPhoto();
+  const [busy, setBusy] = useState(0);
+
+  async function add(files: FileList | null) {
+    const list = [...(files || [])].filter((f) => f.type.startsWith("image/"));
+    if (!list.length) return;
+    setBusy(list.length);
+    let acc = photos;
+    for (const f of list) {
+      const path = await upload("homes", id, f);
+      if (path) {
+        const cur = ((ledger.homes[id] as { photos?: string[] } | undefined)?.photos ?? []);
+        // 업로드 사이에 다른 사진이 추가됐을 수 있어 매번 최신 배열에 붙인다
+        acc = [...new Set([...cur, ...acc, path])];
+        write("homes", id, { photos: acc });
+      }
+      setBusy((n) => n - 1);
+    }
+    toast(`사진 ${list.length}장을 올렸어요`);
+  }
+
+  function del(path: string) {
+    if (!confirm("이 사진을 지울까요?")) return;
+    write("homes", id, { photos: photos.filter((p) => p !== path) });
+    void supabase.storage.from("photos").remove([path]);
+  }
+
+  return (
+    <div>
+      <div className="muted small" style={{ marginBottom: 6 }}>현장 사진 {photos.length ? `${photos.length}장` : ""}</div>
+      <div className="sitephotos">
+        {photos.map((p) => (
+          <div key={p} className="sp">
+            <Photo path={p} alt="현장 사진" />
+            <button className="sp-del" aria-label="사진 지우기" onClick={() => del(p)}>×</button>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+        <label className="btn small">
+          {busy ? `올리는 중… ${busy}` : "사진 찍기"}
+          <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
+        </label>
+        <label className="btn small ghost">
+          앨범에서
+          <input type="file" accept="image/*" multiple hidden onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
+        </label>
+      </div>
+    </div>
   );
 }

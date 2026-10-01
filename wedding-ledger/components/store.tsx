@@ -234,10 +234,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (col: CollectionName, id: string) => {
       const L = ledgerRef.current;
       const rest = { ...(L[col] as Record<string, Obj>) };
-      const photo = rest[id]?.photo;
+      const doc = rest[id];
       delete rest[id];
       commit({ ...L, [col]: rest });
-      if (isStoragePath(photo)) void supabase.storage.from("photos").remove([photo]);
+      const files = [doc?.photo, ...(Array.isArray(doc?.photos) ? doc.photos : [])].filter(isStoragePath);
+      if (files.length) void supabase.storage.from("photos").remove(files);
       clearTimeout(timers.current.get(`${col}/${id}`));
       timers.current.delete(`${col}/${id}`);
       supabase
