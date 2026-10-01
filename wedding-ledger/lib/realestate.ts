@@ -155,23 +155,23 @@ export function matchesApt(itemApt: string, target: string, itemDong?: string, t
 /* ---------- 전용면적별 집계 ---------- */
 
 export interface AreaStat {
-  /** 전용면적 (㎡, 소수 첫째 자리 반올림) */
+  /** 전용면적 (㎡, 정수 반올림 — 같은 평형인데 84.8/84.9처럼 갈라지는 원자료를 묶는다) */
   area: number;
   trade: { count: number; latest: Trade | null; avg: number | null; min: number | null; max: number | null };
   jeonse: { count: number; latest: Rent | null; avg: number | null };
   wolseCount: number;
 }
 
-const round1 = (x: number) => Math.round(x * 10) / 10;
+const areaKey = (x: number) => Math.round(x);
 const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
 const byDateDesc = <T extends { date: string }>(a: T, b: T) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 export function summarize(trades: Trade[], rents: Rent[]): AreaStat[] {
   const live = trades.filter((t) => !t.canceled);
-  const areas = [...new Set([...live.map((t) => round1(t.area)), ...rents.map((r) => round1(r.area))])].sort((a, b) => a - b);
+  const areas = [...new Set([...live.map((t) => areaKey(t.area)), ...rents.map((r) => areaKey(r.area))])].sort((a, b) => a - b);
   return areas.map((area) => {
-    const ts = live.filter((t) => round1(t.area) === area).sort(byDateDesc);
-    const rs = rents.filter((r) => round1(r.area) === area).sort(byDateDesc);
+    const ts = live.filter((t) => areaKey(t.area) === area).sort(byDateDesc);
+    const rs = rents.filter((r) => areaKey(r.area) === area).sort(byDateDesc);
     const js = rs.filter((r) => r.monthly === 0);
     const prices = ts.map((t) => t.price);
     return {
