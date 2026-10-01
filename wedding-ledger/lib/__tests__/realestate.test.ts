@@ -62,18 +62,23 @@ describe("실거래가 API", () => {
     expect(matchesApt("래미안퍼스티지", "래미안퍼스티지", "반포동", "잠원동")).toBe(false);
   });
 
+  it("같은 평형의 소수점 차이(84.8/84.9, 59.9/60)는 한 줄로", () => {
+    const t = (area: number) => ({ apt: "a", dong: "", jibun: "", area, date: "2026-09-01", price: 1, floor: 1, canceled: false });
+    expect(summarize([t(84.8), t(84.9), t(59.9), t(60)], []).map((x) => [x.area, x.trade.count])).toEqual([[60, 2], [85, 2]]);
+  });
+
   it("전용면적별 집계: 해제 거래 제외, 전세/월세 구분, 최신순", () => {
     const trades = parseRtmsXml(TRADE_XML).items.map(toTrade).filter((x) => x && matchesApt(x.apt, "래미안퍼스티지")) as NonNullable<ReturnType<typeof toTrade>>[];
     const rents = parseRtmsXml(RENT_XML).items.map(toRent).filter(Boolean) as NonNullable<ReturnType<typeof toRent>>[];
     const s = summarize(trades, rents);
     expect(s).toHaveLength(1);
-    expect(s[0].area).toBe(84.9);
+    expect(s[0].area).toBe(85);
     expect(s[0].trade).toMatchObject({ count: 2, avg: 4_875_000_000, min: 4_800_000_000, max: 4_950_000_000 });
     expect(s[0].trade.latest!.date).toBe("2026-09-21");
     expect(s[0].jeonse).toMatchObject({ count: 2, avg: 1_450_000_000 });
     expect(s[0].jeonse.latest!.date).toBe("2026-09-02");
     expect(s[0].wolseCount).toBe(1);
-    expect(closestArea(s, 84)?.area).toBe(84.9);
+    expect(closestArea(s, 84)?.area).toBe(85);
     expect(closestArea(s, 59)).toBeNull();
   });
 });

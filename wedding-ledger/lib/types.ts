@@ -214,6 +214,11 @@ export interface Home {
   aptNm?: string;
   /** 법정동코드 앞 5자리 (서울은 gu 로 자동) */
   lawdCd?: string;
+  /** 지번 (실거래 조회에서 담은 경우) — 지도 위치 찾기용 */
+  jibun?: string;
+  /** 지도 좌표 (한 번 찾으면 저장) */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Dress {

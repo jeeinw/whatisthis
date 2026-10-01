@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
       months: yms,
       matchedNames: names,
       stats: summarize(trades, rents),
-      trades: trades.sort(byDate).slice(0, 30),
-      rents: rents.sort(byDate).slice(0, 30),
+      trades: trades.sort(byDate).slice(0, 100),
+      rents: rents.sort(byDate).slice(0, 100),
       fetchedAt: new Date().toISOString(),
     });
   } catch (e) {

@@ -105,6 +105,7 @@ const ymd = (it: Record<string, string>) =>
 export interface Trade {
   apt: string;
   dong: string;
+  jibun: string;
   area: number;
   date: string;
   /** 원 단위 */
@@ -116,6 +117,7 @@ export interface Trade {
 export interface Rent {
   apt: string;
   dong: string;
+  jibun: string;
   area: number;
   date: string;
   /** 원 단위 */
@@ -130,14 +132,14 @@ export function toTrade(it: Record<string, string>): Trade | null {
   const price = num(it.dealAmount);
   const area = num(it.excluUseAr);
   if (price == null || area == null) return null;
-  return { apt: it.aptNm ?? "", dong: it.umdNm ?? "", area, date: ymd(it), price: price * 10000, floor: num(it.floor), canceled: !!(it.cdealType && it.cdealType.trim()) };
+  return { apt: it.aptNm ?? "", dong: it.umdNm ?? "", jibun: it.jibun ?? "", area, date: ymd(it), price: price * 10000, floor: num(it.floor), canceled: !!(it.cdealType && it.cdealType.trim()) };
 }
 
 export function toRent(it: Record<string, string>): Rent | null {
   const deposit = num(it.deposit);
   const area = num(it.excluUseAr);
   if (deposit == null || area == null) return null;
-  return { apt: it.aptNm ?? "", dong: it.umdNm ?? "", area, date: ymd(it), deposit: deposit * 10000, monthly: (num(it.monthlyRent) ?? 0) * 10000, floor: num(it.floor), contractType: it.contractType ?? "" };
+  return { apt: it.aptNm ?? "", dong: it.umdNm ?? "", jibun: it.jibun ?? "", area, date: ymd(it), deposit: deposit * 10000, monthly: (num(it.monthlyRent) ?? 0) * 10000, floor: num(it.floor), contractType: it.contractType ?? "" };
 }
 
 /** 단지명 비교용: 공백·괄호·'아파트' 제거, 소문자. */
@@ -155,23 +157,23 @@ export function matchesApt(itemApt: string, target: string, itemDong?: string, t
 /* ---------- 전용면적별 집계 ---------- */
 
 export interface AreaStat {
-  /** 전용면적 (㎡, 소수 첫째 자리 반올림) */
+  /** 전용면적 (㎡, 정수 반올림 — 같은 평형인데 84.8/84.9처럼 갈라지는 원자료를 묶는다) */
   area: number;
   trade: { count: number; latest: Trade | null; avg: number | null; min: number | null; max: number | null };
   jeonse: { count: number; latest: Rent | null; avg: number | null };
   wolseCount: number;
 }
 
-const round1 = (x: number) => Math.round(x * 10) / 10;
+const areaKey = (x: number) => Math.round(x);
 const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
 const byDateDesc = <T extends { date: string }>(a: T, b: T) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 export function summarize(trades: Trade[], rents: Rent[]): AreaStat[] {
   const live = trades.filter((t) => !t.canceled);
-  const areas = [...new Set([...live.map((t) => round1(t.area)), ...rents.map((r) => round1(r.area))])].sort((a, b) => a - b);
+  const areas = [...new Set([...live.map((t) => areaKey(t.area)), ...rents.map((r) => areaKey(r.area))])].sort((a, b) => a - b);
   return areas.map((area) => {
-    const ts = live.filter((t) => round1(t.area) === area).sort(byDateDesc);
-    const rs = rents.filter((r) => round1(r.area) === area).sort(byDateDesc);
+    const ts = live.filter((t) => areaKey(t.area) === area).sort(byDateDesc);
+    const rs = rents.filter((r) => areaKey(r.area) === area).sort(byDateDesc);
     const js = rs.filter((r) => r.monthly === 0);
     const prices = ts.map((t) => t.price);
     return {
@@ -189,3 +191,9 @@ export function closestArea(stats: AreaStat[], area: number | null | undefined):
   const best = stats.reduce((a, b) => (Math.abs(b.area - area) < Math.abs(a.area - area) ? b : a));
   return Math.abs(best.area - area) <= 3 ? best : null;
 }
+
+/** 서울 구 이름 목록 (조회 화면 선택지) */
+export const SEOUL_GU = Object.keys(SEOUL_LAWD);
+
+/** 법정동코드 → 구 이름 (서울만) */
+export const guOfLawd = (lawd: string) => Object.entries(SEOUL_LAWD).find(([, c]) => c === lawd)?.[0] ?? null;

@@ -5,13 +5,17 @@ import { amort, sensitivity } from "@/lib/calc/loan";
 import { avgScore, listOf } from "@/lib/calc/wedding";
 import { eok, isNum, won } from "@/lib/format";
 import type { Home, LoanMethod, Settings } from "@/lib/types";
+import { useState } from "react";
 import { useStore } from "../store";
+import { HomesMap, type MapPoint } from "../KakaoMap";
+import { RealSearch } from "../RealSearch";
 import { AvgCell, blogLink, Chk, ManInput, naverQ, NumInput, ScoreSelect, StatusSelect, statusRank, stripParen, useSort } from "../shared";
 
 const METHOD_LABEL: Record<LoanMethod, string> = { equal: "원리금균등", principal: "원금균등", bullet: "만기일시" };
 
 export function House() {
   const { ledger, s, setSettings } = useStore();
+  const [searchPoint, setSearchPoint] = useState<MapPoint | null>(null);
   const f = s.fin, h = s.house;
   const eq = equity(ledger, s);
 
@@ -157,7 +161,14 @@ export function House() {
       <LoanSim s={s} autoP={autoP} autoR={autoR} />
 
       <section className="section">
+        <h2>실거래가 조회</h2>
+        <p className="lead">국토부 신고 자료로 단지의 최근 매매·전월세 거래를 바로 찾아봐요. 마음에 들면 임장 후보로 담을 수 있어요.</p>
+        <RealSearch onPoint={setSearchPoint} />
+      </section>
+
+      <section className="section">
         <h2>임장 후보</h2>
+        <HomesMap extra={searchPoint} />
         <p className="lead">단지를 추가하고 호가·KB시세·전세가를 적으면, 위 자금 조건으로 살 수 있는지(또는 전세로 들어갈 수 있는지) 바로 계산해요. 단지명을 누르면 임장 체크리스트가 열려요.</p>
         <HomesTable />
       </section>
