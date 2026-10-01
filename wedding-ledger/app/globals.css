@@ -247,3 +247,11 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 }
 .lg{display:inline-block;width:14px;height:0;border-top:2.5px solid var(--ribbon);vertical-align:middle;margin-right:2px}
 .lg.lg-jeonse{border-top:2.5px dashed var(--sage)}
+.kmap-pin.ok{border-color:#4F6B55;border-width:2px}
+.kmap-pin.ok span{color:#4F6B55;font-weight:600}
+.kmap-pin.short{border-color:#A3462B;border-width:2px}
+.kmap-pin.short span{color:#A3462B;font-weight:600}
+.kmap-pin.none{border-color:#9AA0A6}
+.kmap-pin.none span{color:#676C75}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;vertical-align:middle;background:#9AA0A6}
+.dot.ok{background:var(--sage)} .dot.short{background:var(--warn)}

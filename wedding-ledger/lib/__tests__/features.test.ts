@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { homeCalc, homesVerdict, verdictText } from "../calc/housing";
+import { eok } from "../format";
+import { resolveSettings } from "../settings";
+import { sampleLedger } from "./fixtures";
 import { giftStats, guestStats, guestsWithoutGift, parseGuestLines } from "../calc/guests";
 import { addDays, ddayLabel, payStats, taskBucket, taskDue } from "../calc/schedule";
 import { buildIcs, gcalUrl } from "../calendar";
@@ -90,5 +94,25 @@ describe("캘린더", () => {
     const u = new URL(gcalUrl({ title: "웨딩홀 잔금", date: "2026-12-31" }));
     expect(u.searchParams.get("dates")).toBe("20261231/20270101");
     expect(u.searchParams.get("text")).toBe("웨딩홀 잔금");
+  });
+});
+
+describe("임장 후보 자동 판정 요약", () => {
+  it("homeCalc 결과로 가능/부족/가격 없음을 세고, 제외는 뺀다", () => {
+    const L = sampleLedger();
+    const s = resolveSettings(L.settings);
+    L.homes = {
+      a: { name: "싼 전세", kind: "전세", jeonse: 1e7 },
+      b: { name: "비싼 매매", kind: "매매", price: 300e8 },
+      c: { name: "가격 없음", kind: "매매" },
+      d: { name: "제외", kind: "전세", jeonse: 1e7, status: "제외" },
+    };
+    const v = homesVerdict(L, s);
+    expect(v.rows.map((r) => [r.id, r.verdict])).toEqual([["a", "ok"], ["b", "short"], ["c", "none"]]);
+    expect([v.ok, v.short, v.none]).toEqual([1, 1, 1]);
+    const a = v.rows[0];
+    expect(a.gap).toBe(homeCalc(L.homes.a, L, s)!.gap);
+    expect(verdictText(v.rows[2], eok)).toBe("가격 입력 필요");
+    expect(verdictText(v.rows[1], eok)).toMatch(/^부족 /);
   });
 });
