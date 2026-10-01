@@ -50,7 +50,7 @@ export function Vendors({ cat, go }: { cat: "studio" | "dress" | "makeup"; go: (
         </button>
       </div>
       {sorted.rows.length ? (
-        <div className="tablebox">
+        <div className="tablebox cards">
           <table className="sheet">
             <thead>
               <tr>

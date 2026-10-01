@@ -117,6 +117,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const inflight = useRef(new Map<string, Promise<void>>());
   const [meta, setMeta] = useState<Record<string, DocMeta>>({});
   const [me, setMe] = useState<string | null>(null);
+  const meRef = useRef<string | null>(null);
   const [retryTick, setRetryTick] = useState(0);
   const [needsMigration, setNeedsMigration] = useState(false);
 
@@ -179,7 +180,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setMeta(m);
       setStatus("ready");
       setSync("저장됨");
-      supabase.auth.getUser().then(({ data }) => !cancelled && setMe(data.user?.email ?? null));
+      supabase.auth.getUser().then(({ data }) => {
+        meRef.current = data.user?.email ?? null;
+        if (!cancelled) setMe(meRef.current);
+      });
       // 30일 지난 휴지통 비우기 + 그 문서들의 사진 파일 정리
       supabase.rpc("purge_trash").then(({ data }) => {
         const files = ((data as Obj[] | null) ?? []).flatMap((d) => [d?.photo, ...(Array.isArray(d?.photos) ? d.photos : [])]).filter(isStoragePath);
@@ -257,7 +261,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         toast(`저장하지 못했어요 (${error.message})`);
         setSync("저장 실패 — 잠시 후 다시 시도");
         setTimeout(() => setRetryTick((t) => t + 1), 5000);
-      } else if (!pending.current.size) setSync("저장됨");
+      } else {
+        setMeta((x) => ({ ...x, [key]: { at: new Date().toISOString(), by: meRef.current } }));
+        if (!pending.current.size) setSync("저장됨");
+      }
     },
     [supabase, toast],
   );

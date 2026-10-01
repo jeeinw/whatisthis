@@ -19,7 +19,7 @@ const LABEL: Record<string, string> = {
   tasks: "준비 체크리스트",
 };
 
-export const nameOf = (d: Record<string, unknown>) => String(d.name || d.title || d.shop || d.vendor || "(이름 없음)");
+export const nameOf = (d: Record<string, unknown>) => String(d.name || d.title || d.shop || d.vendor || d.planner || "(이름 없음)");
 
 function ago(iso: string) {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 864e5);

@@ -102,6 +102,8 @@ export interface Hall {
   mealMax?: Won;
   rental?: Won;
   rentalNote?: string;
+  /** 가격을 마지막으로 확인한 날 (YYYY-MM-DD) */
+  checkedAt?: string;
   minGuests?: number | null;
   maxGuests?: number | null;
   times?: string;

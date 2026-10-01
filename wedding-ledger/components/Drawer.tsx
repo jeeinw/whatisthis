@@ -5,18 +5,18 @@ import { dressPriceIndex } from "@/lib/calc/dress";
 import { isNum, won } from "@/lib/format";
 import type { ScoreKind } from "@/lib/types";
 import { useStore } from "./store";
-import { blogLink, Photo, stripParen, TextCell, usePickPhoto, useUploadPhoto } from "./shared";
+import { blogLink, Edited, Photo, stripParen, TextCell, useDraft, usePickPhoto, useUploadPhoto } from "./shared";
 import { RealPrice } from "./RealPrice";
 import type { Home } from "@/lib/types";
 
-type FieldType = "text" | "select" | "area" | "wide" | "num";
+type FieldType = "text" | "select" | "area" | "wide" | "num" | "date";
 type Field = [key: string, label: string, type?: FieldType, opts?: string[]];
 
 // legacy FIELDS 그대로
 const FIELDS: Record<"planners" | "vendors" | "halls" | "homes", Field[]> = {
   planners: [["name", "플래너 이름"], ["kind", "유형", "select", ["동행 플래너", "비동행 플래너", "온라인·앱", "기타"]], ["manager", "담당자"], ["phone", "연락처"], ["address", "주소", "wide"], ["features", "특징", "area"], ["benefits", "혜택", "area"], ["fee", "비용·결제 조건", "area"], ["insta", "인스타그램 링크"], ["blog", "사이트·후기 링크"], ["source", "출처"], ["memo", "메모", "area"]],
   vendors: [["name", "업체명"], ["cat", "분류", "select", ["studio", "dress", "makeup", "snap", "etc"]], ["planner", "제휴 플래너"], ["location", "위치"], ["features", "특징", "area"], ["price", "견적가 (원)", "num"], ["listPrice", "정가 (원)", "num"], ["listNote", "정가 메모"], ["quoteDelta", "플래너 견적 대비 추가금 (원)", "num"], ["priceNote", "견적 조건", "area"], ["extraFees", "추가금·조건", "area"], ["insta", "인스타그램 링크"], ["blog", "저장한 블로그 후기 링크"], ["blogSummary", "후기 요약", "area"], ["source", "출처"], ["memo", "메모", "area"]],
-  halls: [["name", "웨딩홀 이름"], ["zone", "권역", "select", ZONES], ["gu", "구"], ["dong", "동"], ["type", "유형", "select", ["", ...HALL_TYPES]], ["mealType", "식사 형식"], ["mealMin", "식대 최소 (1인, 원)", "num"], ["mealMax", "식대 최대 (1인, 원)", "num"], ["rental", "대관료 (원)", "num"], ["rentalNote", "대관료 비고", "area"], ["minGuests", "최소 보증인원", "num"], ["maxGuests", "최대 수용", "num"], ["times", "가능 시간대 (예: 토 11:00 / 13:30 / 17:00)", "wide"], ["interval", "예식 간격 (분)", "num"], ["flowerFee", "꽃장식 (원)", "num"], ["productionFee", "연출·음향 (원)", "num"], ["snapFee", "본식 스냅·영상 (원)", "num"], ["otherOptions", "기타 옵션비용", "area"], ["includes", "기본 포함", "area"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["parking", "주차 (대)", "num"], ["address", "주소", "wide"], ["phone", "전화"], ["homepage", "홈페이지"], ["insta", "인스타그램"], ["naverPlace", "네이버 플레이스"], ["blog", "저장한 블로그 후기"], ["source", "출처", "wide"], ["memo", "메모", "area"]],
+  halls: [["name", "웨딩홀 이름"], ["zone", "권역", "select", ZONES], ["gu", "구"], ["dong", "동"], ["type", "유형", "select", ["", ...HALL_TYPES]], ["mealType", "식사 형식"], ["mealMin", "식대 최소 (1인, 원)", "num"], ["mealMax", "식대 최대 (1인, 원)", "num"], ["rental", "대관료 (원)", "num"], ["rentalNote", "대관료 비고", "area"], ["checkedAt", "가격 확인일 (상담·견적 받은 날)", "date"], ["minGuests", "최소 보증인원", "num"], ["maxGuests", "최대 수용", "num"], ["times", "가능 시간대 (예: 토 11:00 / 13:30 / 17:00)", "wide"], ["interval", "예식 간격 (분)", "num"], ["flowerFee", "꽃장식 (원)", "num"], ["productionFee", "연출·음향 (원)", "num"], ["snapFee", "본식 스냅·영상 (원)", "num"], ["otherOptions", "기타 옵션비용", "area"], ["includes", "기본 포함", "area"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["parking", "주차 (대)", "num"], ["address", "주소", "wide"], ["phone", "전화"], ["homepage", "홈페이지"], ["insta", "인스타그램"], ["naverPlace", "네이버 플레이스"], ["blog", "저장한 블로그 후기"], ["source", "출처", "wide"], ["memo", "메모", "area"]],
   homes: [["name", "단지명"], ["kind", "유형", "select", ["매매", "전세"]], ["gu", "구"], ["dong", "동"], ["aptNm", "실거래 단지명 (국토부 표기, 비우면 단지명)"], ["lawdCd", "법정동코드 5자리 (서울은 구로 자동)"], ["area", "전용면적 (㎡)", "num"], ["price", "매매 호가 (원)", "num"], ["kb", "KB시세 (원)", "num"], ["recent", "최근 실거래가 (원)", "num"], ["jeonse", "전세가 (원)", "num"], ["units", "세대수", "num"], ["year", "준공연도", "num"], ["station", "가까운 역"], ["walk", "역 도보 (분)", "num"], ["school", "배정 초등학교"], ["visit", "임장일"], ["agent", "부동산·연락처"], ["link", "매물 링크", "wide"], ["memo", "메모", "area"]],
 };
 
@@ -61,6 +61,13 @@ function EntityDrawer({ col, id }: { col: "planners" | "vendors" | "halls" | "ho
       );
     else if (type === "area") input = <AreaField value={(v as string) ?? ""} onChange={(x) => set({ [k]: x })} />;
     else if (type === "num") input = <NumField value={v} onChange={(x) => set({ [k]: x })} />;
+    else if (type === "date")
+      input = (
+        <span style={{ display: "flex", gap: 6 }}>
+          <input type="date" value={(v as string) ?? ""} onChange={(e) => set({ [k]: e.target.value })} />
+          <button type="button" className="btn small" onClick={() => set({ [k]: new Date().toLocaleDateString("sv-SE") })}>오늘</button>
+        </span>
+      );
     else input = <TextCell className="" value={(v as string) ?? ""} label={label} onChange={(x) => set({ [k]: x })} />;
     return (
       <label key={k} style={full ? { gridColumn: "1/-1" } : undefined}>
@@ -73,7 +80,10 @@ function EntityDrawer({ col, id }: { col: "planners" | "vendors" | "halls" | "ho
   return (
     <aside className="drawer" role="dialog" aria-modal="true" aria-label={`${d.name} 편집`}>
       <header>
-        <h2>{d.name || "새 항목"}</h2>
+        <div>
+          <h2>{d.name || "새 항목"}</h2>
+          <Edited k={`${col}/${id}`} />
+        </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button
             className="btn small danger"
@@ -161,11 +171,21 @@ function EntityDrawer({ col, id }: { col: "planners" | "vendors" | "halls" | "ho
 }
 
 function AreaField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <textarea defaultValue={value} onChange={(e) => onChange(e.target.value)} />;
+  const { draft, setDraft, bind } = useDraft(value);
+  return <textarea value={draft} {...bind} onChange={(e) => (setDraft(e.target.value), onChange(e.target.value))} />;
 }
 
 function NumField({ value, onChange }: { value: unknown; onChange: (v: number | null) => void }) {
-  return <input type="number" defaultValue={isNum(value) ? value : ""} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} />;
+  const { draft, setDraft, bind } = useDraft(isNum(value) ? String(value) : "");
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      value={draft}
+      {...bind}
+      onChange={(e) => (setDraft(e.target.value), onChange(e.target.value === "" ? null : Number(e.target.value)))}
+    />
+  );
 }
 
 function DressPriceDetail({ k }: { k: string }) {

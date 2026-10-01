@@ -2,6 +2,7 @@
 import { CHECKS, HOME_STATUS, SCORE } from "@/lib/constants";
 import { buyCalc, equity, homeCalc, incomeFor, jeonseCalc, maxBuyPrice } from "@/lib/calc/housing";
 import { amort, sensitivity } from "@/lib/calc/loan";
+import { RULES_AS_OF, rulesAgeMonths } from "@/lib/rules";
 import { avgScore, listOf } from "@/lib/calc/wedding";
 import { eok, isNum, won } from "@/lib/format";
 import type { Home, LoanMethod, Settings } from "@/lib/types";
@@ -79,7 +80,10 @@ export function House() {
   return (
     <>
       <h2>신혼집 자금과 대출</h2>
-      <p className="lead">금액은 만원 단위로 적어요. 적는 즉시 아래 결과와 임장 후보표가 다시 계산돼요. 대출 규정은 2026년 9월 기준 공개 자료를 바탕으로 한 추정이라, 실제 한도는 은행 사전 조회로 꼭 확인해 주세요.</p>
+      <p className="lead">금액은 만원 단위로 적어요. 적는 즉시 아래 결과와 임장 후보표가 다시 계산돼요. 대출 규정은 {RULES_AS_OF.slice(0, 4)}년 {Number(RULES_AS_OF.slice(5, 7))}월 기준 공개 자료를 바탕으로 한 추정이라, 실제 한도는 은행 사전 조회로 꼭 확인해 주세요.</p>
+      {rulesAgeMonths() >= 6 && (
+        <p className="note small">규정 기준일({RULES_AS_OF.slice(0, 7)})로부터 {rulesAgeMonths()}개월이 지났어요. LTV·DSR·전세대출 조건이 바뀌었을 수 있으니 최신 공고를 확인해 주세요.</p>
+      )}
       <div className="grid2">
         <section className="panel">
           <h3>우리 자금</h3>
@@ -280,7 +284,7 @@ function HomesTable() {
       {!rows.length ? (
         <div className="empty-state panel">아직 후보 단지가 없어요. ‘단지 추가’로 첫 후보를 넣어 보세요.</div>
       ) : (
-        <div className="tablebox">
+        <div className="tablebox cards">
           <table className="sheet">
             <thead>
               <tr>

@@ -89,7 +89,8 @@ export const statusRank = (r: { status?: string }) => rank(r.status);
 /* ---------- 입력 ---------- */
 
 /** 입력 중에는 입력값(draft)을, 그 외에는 바깥 값을 보여주는 텍스트 상태. */
-function useDraft(external: string) {
+/** 입력 중에는 내가 친 값, 아니면 저장된 값(다른 사람이 바꾸면 바로 반영)을 보여 준다. */
+export function useDraft(external: string) {
   const [draft, setDraft] = useState<string | null>(null);
   return {
     draft: draft ?? external,
@@ -286,4 +287,26 @@ export function usePickPhoto() {
     };
     input.click();
   };
+}
+
+/** "3분 전", "어제" 같은 상대 시간 */
+export function relTime(iso: string, now = Date.now()) {
+  const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "방금";
+  if (s < 3600) return `${Math.floor(s / 60)}분 전`;
+  if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
+  const d = Math.floor(s / 86400);
+  return d === 1 ? "어제" : d < 30 ? `${d}일 전` : new Date(iso).toLocaleDateString("ko-KR");
+}
+
+/** 수정한 사람 표시: 내 이메일이면 "나", 아니면 이메일 앞부분 */
+export const whoLabel = (by: string | null, me: string | null) => (!by ? "" : by === me ? "나" : by.split("@")[0]);
+
+/** 문서의 마지막 수정 (누가·언제) 한 줄 */
+export function Edited({ k }: { k: string }) {
+  const { meta, me } = useStore();
+  const m = meta[k];
+  if (!m) return null;
+  const who = whoLabel(m.by, me);
+  return <span className="edited">{who ? `${who} · ` : ""}{relTime(m.at)} 수정</span>;
 }

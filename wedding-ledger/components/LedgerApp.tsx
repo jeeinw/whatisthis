@@ -15,6 +15,7 @@ import { Halls } from "./tabs/Halls";
 import { Board } from "./tabs/Board";
 import { House } from "./tabs/House";
 import { TrashPanel } from "./TrashPanel";
+import { CardLabels } from "./CardLabels";
 
 export function LedgerApp() {
   return (
@@ -116,6 +117,7 @@ function Shell() {
          <Vendors cat={tab as "studio" | "dress" | "makeup"} go={go} />}
       </main>
       <Drawer />
+      <CardLabels />
       {trash && <TrashPanel onClose={() => setTrash(false)} />}
     </div>
   );

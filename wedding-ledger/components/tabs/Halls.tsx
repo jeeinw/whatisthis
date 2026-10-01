@@ -91,7 +91,7 @@ export function Halls() {
           웨딩홀 추가
         </button>
       </div>
-      <div className="tablebox" style={{ maxHeight: "72vh", overflow: "auto" }}>
+      <div className="tablebox cards" style={{ maxHeight: "72vh", overflow: "auto" }}>
         <table className="sheet">
           <thead>
             <tr>
@@ -115,7 +115,7 @@ export function Halls() {
                   <td className="small">{r.gu} {r.dong}<br /><span className="muted">{r.zone}</span></td>
                   <td>{r.type}</td>
                   <td className="num">{isNum(r.mealMin) ? (r.mealMax && r.mealMax !== r.mealMin ? `${man(r.mealMin)}~${man(r.mealMax)}` : man(r.mealMin)) : <span className="muted">상담</span>}</td>
-                  <td className="num" title={r.rentalNote}>{isNum(r.rental) ? man(r.rental) : <span className="muted">상담</span>}{r.plannerQuote && <><br /><span className="unit">꽃장식 포함</span></>}</td>
+                  <td className="num" title={r.rentalNote}>{isNum(r.rental) ? man(r.rental) : <span className="muted">상담</span>}{r.plannerQuote && <><br /><span className="unit">꽃장식 포함</span></>}<CheckedAt d={r.checkedAt} /></td>
                   <td className="num">{isNum(r.minGuests) ? r.minGuests + "명" : "—"}{isNum(r.maxGuests) && <><br /><span className="muted small">~{r.maxGuests}</span></>}</td>
                   <td className="num"><b>{est != null ? man(Math.round(est)) : "—"}</b>{est != null && !isNum(r.rental) && <><br /><span className="muted small">대관료 제외</span></>}</td>
                   <td className="wrap small" style={{ minWidth: 120 }}>{r.times || <span className="muted">{isNum(r.interval) ? r.interval + "분 간격" : "입력"}</span>}</td>
@@ -140,6 +140,18 @@ export function Halls() {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+/** 가격 확인일 — 3개월이 지나면 다시 확인하라고 표시 */
+function CheckedAt({ d }: { d?: string }) {
+  if (!d) return null;
+  const months = Math.floor((Date.parse(new Date().toDateString()) - Date.parse(d + "T00:00:00")) / (30.44 * 864e5));
+  return (
+    <>
+      <br />
+      <span className={`unit ${months >= 3 ? "no" : ""}`} title={`가격 확인일 ${d}`}>{months <= 0 ? "이번 달 확인" : `${months}개월 전 확인`}</span>
     </>
   );
 }

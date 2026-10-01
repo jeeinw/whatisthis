@@ -222,3 +222,26 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .kmap-pin span{color:#7B2D48;font-size:11px}
 .kmap-pin.search{background:#7B2D48;color:#fff;border-color:#7B2D48}
 .kmap-pin.search span{color:#F3E4EA}
+.sheet input.cell.name-edit{width:170px;text-align:left;font-weight:600}
+.edited{font-size:11px;color:var(--muted);font-weight:400}
+.recent{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.recent li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:4px 0}
+.recent li button{background:none;border:0;padding:0;color:var(--ink);cursor:pointer;text-align:left}
+.recent li button:hover{color:var(--ribbon);text-decoration:underline}
+/* 좁은 화면: 표 → 카드 (td의 data-label은 CardLabels가 채움) */
+@media (max-width:640px){
+  .tablebox.cards{border:0;background:none;overflow:visible}
+  .tablebox.cards table,.tablebox.cards tbody,.tablebox.cards tfoot,.tablebox.cards tr,.tablebox.cards td{display:block;width:100%}
+  .tablebox.cards thead{display:none}
+  .tablebox.cards tr{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;padding:8px 12px;background:var(--surface)}
+  .tablebox.cards tr.sub{margin:-6px 0 10px 14px;border-style:dashed}
+  .tablebox.cards td{border:0;padding:5px 0;white-space:normal;text-align:right;min-width:0;max-width:none;position:static;overflow:hidden}
+  .tablebox.cards td::before{content:attr(data-label);float:left;color:var(--muted);font-size:12px;text-align:left;margin-right:12px;line-height:24px}
+  .tablebox.cards td[data-label=""]::before,.tablebox.cards td:not([data-label])::before{display:none}
+  .tablebox.cards td:empty{display:none}
+  .tablebox.cards td.name,.tablebox.cards tr td:first-child{font-size:15px;font-weight:600;text-align:left}
+  .tablebox.cards td.name::before,.tablebox.cards tr td:first-child::before{display:none}
+  .tablebox.cards tr.sub td:first-child{padding-left:0;font-size:13px}
+  .tablebox.cards input.cell,.tablebox.cards input.cell.memo{width:min(200px,55vw)}
+  .tablebox.cards tr td:first-child input.cell{width:100%;text-align:left}
+}

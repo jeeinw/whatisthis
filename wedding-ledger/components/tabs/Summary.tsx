@@ -5,6 +5,7 @@ import { avgScore, budgetCalc, extrasTotal, hallEstimate, listOf, mainQuote, quo
 import { eok, isNum, manWon } from "@/lib/format";
 import type { Hall, Home, Planner, ScoreKind, Vendor } from "@/lib/types";
 import { useStore } from "../store";
+import { Recent } from "../Recent";
 import { ManInput } from "../shared";
 
 type Scored = { id: string; name: string; status?: string; scores?: Record<string, number | null | undefined> };
@@ -148,6 +149,7 @@ export function Summary({ go }: { go: (tab: string) => void }) {
           {pickBox("신혼집 후보", listOf<Home>(ledger.homes), "home", "homes", "house")}
         </div>
       </section>
+      <Recent go={go} />
     </>
   );
 }
