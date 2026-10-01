@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7B2D48">
+<title>오프라인 — J & D 장부</title>
+<style>
+  :root{--paper:#F3F4F1;--ink:#1E222A;--muted:#676C75;--ribbon:#7B2D48}
+  @media (prefers-color-scheme:dark){:root{--paper:#15171B;--ink:#E8E6E1;--muted:#9A9FA8;--ribbon:#E08FAC}}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;text-align:center;padding:24px}
+  img{width:72px;height:72px;border-radius:16px}
+  h1{font-size:20px;margin:16px 0 6px}
+  p{color:var(--muted);margin:0 0 18px;line-height:1.6}
+  button{border:1px solid var(--ribbon);background:var(--ribbon);color:#fff;border-radius:8px;padding:10px 18px;font:inherit}
+</style>
+</head>
+<body>
+  <main>
+    <img src="/icons/icon-192.png" alt="">
+    <h1>인터넷에 연결되어 있지 않아요</h1>
+    <p>장부는 두 사람이 함께 쓰는 데이터라 연결이 필요해요.<br>연결되면 다시 시도해 주세요.</p>
+    <button onclick="location.reload()">다시 시도</button>
+  </main>
+</body>
+</html>

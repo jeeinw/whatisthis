@@ -208,6 +208,12 @@ export interface Home {
   status?: string;
   memo?: string;
   photo?: string;
+  /** 임장 현장 사진 (Storage 경로) */
+  photos?: string[];
+  /** 국토부 실거래 단지명 (비우면 name) */
+  aptNm?: string;
+  /** 법정동코드 앞 5자리 (서울은 gu 로 자동) */
+  lawdCd?: string;
 }
 
 export interface Dress {
