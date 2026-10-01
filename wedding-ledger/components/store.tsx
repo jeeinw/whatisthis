@@ -1,10 +1,11 @@
 "use client";
 // 장부 데이터 스토어: 전체 로드 → 낙관적 업데이트 → 문서별 450ms 디바운스 저장 (legacy write/flush와 같은 흐름).
+// 저장은 바뀐 필드만 보낸다 (patch_doc RPC가 서버에서 깊은 병합) → 두 사람이 같은 문서의 다른 칸을 고쳐도 덮어쓰지 않는다.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { rowsToLedger, SETTINGS_ID, TABLE, type Row } from "@/lib/db";
 import { clone, deepMerge, resolveSettings } from "@/lib/settings";
-import { COLLECTIONS, type CollectionName, type Ledger, type Settings } from "@/lib/types";
+import { COLLECTIONS, NEW_COLLECTIONS, type CollectionName, type Ledger, type Settings } from "@/lib/types";
 
 type Col = CollectionName | "settings";
 type Obj = Record<string, unknown>;
@@ -35,6 +36,21 @@ function loadUI(): UIState {
   return DEFAULT_UI;
 }
 
+/** 문서별 마지막 수정 (누가·언제) */
+export interface DocMeta {
+  at: string;
+  by: string | null;
+}
+
+export interface TrashItem {
+  id: number;
+  tbl: string;
+  doc_id: string;
+  data: Obj;
+  deleted_at: string;
+  deleted_email: string | null;
+}
+
 export type Drawer = { col: "planners" | "vendors" | "halls" | "homes"; id: string } | { col: "dprice"; key: string } | null;
 
 interface Store {
@@ -45,6 +61,10 @@ interface Store {
   setSettings: (patch: Obj) => void;
   create: (col: CollectionName, data: Obj) => string;
   remove: (col: CollectionName, id: string) => void;
+  restore: (item: TrashItem) => Promise<void>;
+  meta: Record<string, DocMeta>;
+  me: string | null;
+  needsMigration: boolean;
   ui: UIState;
   setUI: (fn: (u: UIState) => UIState) => void;
   drawer: Drawer;
@@ -61,11 +81,21 @@ export const useStore = () => {
 };
 
 function emptyLedger(): Ledger {
-  return { planners: {}, vendors: {}, quotes: {}, extras: {}, halls: {}, dresses: {}, budget: {}, homes: {}, priceLists: {}, settings: {} };
+  return { planners: {}, vendors: {}, quotes: {}, extras: {}, halls: {}, dresses: {}, budget: {}, homes: {}, priceLists: {}, guests: {}, gifts: {}, payments: {}, tasks: {}, settings: {} };
 }
 
 /** Storage에 올린 사진 경로인지 (legacy data URL·빈 값 제외) */
 const isStoragePath = (p: unknown): p is string => typeof p === "string" && p !== "" && !p.startsWith("data:");
+
+/** undefined → null (JSON으로 보내면 undefined 키가 사라져 서버와 화면이 달라지므로) */
+function normalize(patch: Obj): Obj {
+  return JSON.parse(JSON.stringify(patch, (_k, v) => (v === undefined ? null : v)));
+}
+
+/** patch_doc / trash_doc 마이그레이션(0002)이 아직 안 된 DB */
+const missingFn = (e: { code?: string; message?: string }) => e.code === "PGRST202" || e.code === "42883" || /could not find the function/i.test(e.message ?? "");
+
+const metaOf = (r: { updated_at?: string; updated_email?: string | null }): DocMeta | null => (r.updated_at ? { at: r.updated_at, by: r.updated_email ?? null } : null);
 
 function newId(col: string) {
   return col[0] + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -81,6 +111,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [drawer, setDrawer] = useState<Drawer>(null);
   const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([]);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  /** 아직 서버에 안 보낸 변경 (문서별로 합쳐 둔 patch) */
+  const pending = useRef(new Map<string, Obj>());
+  /** 보내는 중인 저장 (삭제가 생성보다 먼저 도착하지 않게) */
+  const inflight = useRef(new Map<string, Promise<void>>());
+  const [meta, setMeta] = useState<Record<string, DocMeta>>({});
+  const [me, setMe] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
+  const [needsMigration, setNeedsMigration] = useState(false);
 
   const toast = useCallback((msg: string) => {
     const id = Date.now() + Math.random();
@@ -112,9 +150,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const rows: Record<string, Row[]> = {};
       const results = await Promise.all(
         ([...COLLECTIONS, "settings"] as Col[]).map(async (c) => {
-          const { data, error } = await supabase.from(TABLE[c]).select("id,data");
+          const { data, error } = await supabase.from(TABLE[c]).select("*");
+          // 0002 마이그레이션 전이면 새 테이블이 없다 → 빈 컬렉션으로 두고 안내만
+          if (error && (NEW_COLLECTIONS as readonly string[]).includes(c) && /PGRST205|42P01/.test(error.code ?? "")) {
+            if (!cancelled) setNeedsMigration(true);
+            return [c, []] as const;
+          }
           if (error) throw error;
-          return [c, data as Row[]] as const;
+          return [c, data as (Row & { updated_at?: string; updated_email?: string | null })[]] as const;
         }),
       ).catch((e: Error) => {
         if (!cancelled) {
@@ -124,10 +167,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return null;
       });
       if (!results || cancelled) return;
-      for (const [c, r] of results) rows[c] = r;
+      const m: Record<string, DocMeta> = {};
+      for (const [c, r] of results) {
+        rows[c] = r.map(({ id, data }) => ({ id, data }));
+        for (const x of r) {
+          const mm = metaOf(x);
+          if (mm) m[`${c}/${x.id}`] = mm;
+        }
+      }
       commit(rowsToLedger(rows));
+      setMeta(m);
       setStatus("ready");
       setSync("저장됨");
+      supabase.auth.getUser().then(({ data }) => !cancelled && setMe(data.user?.email ?? null));
+      // 30일 지난 휴지통 비우기 + 그 문서들의 사진 파일 정리
+      supabase.rpc("purge_trash").then(({ data }) => {
+        const files = ((data as Obj[] | null) ?? []).flatMap((d) => [d?.photo, ...(Array.isArray(d?.photos) ? d.photos : [])]).filter(isStoragePath);
+        if (files.length) void supabase.storage.from("photos").remove(files);
+      });
     })();
     return () => {
       cancelled = true;
@@ -151,16 +208,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           commit({ ...L, [col]: rest });
           return;
         }
-        const row = payload.new as Row;
-        // 이 문서에 아직 저장 안 된 내 수정이 있으면 내 것을 유지 (곧 저장되면서 덮어씀)
-        if (timers.current.has(`${col}/${row.id}`)) return;
+        const row = payload.new as Row & { updated_at?: string; updated_email?: string | null };
+        const key = `${col}/${row.id}`;
+        const mm = metaOf(row);
+        if (mm) setMeta((x) => ({ ...x, [key]: mm }));
+        // 아직 안 보낸 내 수정이 있으면 서버 값 위에 다시 얹는다 (곧 저장됨)
+        const mine = pending.current.get(key);
+        const data = mine ? deepMerge(clone(row.data), clone(mine)) : row.data;
         if (col === "settings") {
-          if (row.id === SETTINGS_ID && JSON.stringify(L.settings) !== JSON.stringify(row.data)) commit({ ...L, settings: row.data });
+          if (row.id === SETTINGS_ID && JSON.stringify(L.settings) !== JSON.stringify(data)) commit({ ...L, settings: data });
           return;
         }
         const cur = (L[col] as Record<string, Obj>)[row.id];
-        if (cur && JSON.stringify(cur) === JSON.stringify(row.data)) return; // 내 저장의 메아리
-        commit({ ...L, [col]: { ...L[col], [row.id]: row.data } });
+        if (cur && JSON.stringify(cur) === JSON.stringify(data)) return; // 내 저장의 메아리
+        commit({ ...L, [col]: { ...L[col], [row.id]: data } });
       });
     }
     channel.subscribe((st) => {
@@ -174,60 +235,81 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   /* ---------- 저장 ---------- */
   const flush = useCallback(
     async (col: Col, id: string) => {
-      timers.current.delete(`${col}/${id}`);
-      const L = ledgerRef.current;
-      const data = col === "settings" ? L.settings : (L[col] as Record<string, Obj>)[id];
-      if (!data) return;
-      const { error } = await supabase.from(TABLE[col]).upsert({ id: col === "settings" ? SETTINGS_ID : id, data });
+      const key = `${col}/${id}`;
+      clearTimeout(timers.current.get(key));
+      timers.current.delete(key);
+      const patch = pending.current.get(key);
+      if (!patch) return;
+      pending.current.delete(key);
+      const req = supabase.rpc("patch_doc", { tbl: TABLE[col], doc_id: id, patch });
+      inflight.current.set(key, Promise.resolve(req).then(() => undefined));
+      let { error } = await req;
+      inflight.current.delete(key);
+      if (error && missingFn(error)) {
+        // 마이그레이션 전 DB: 문서 전체 저장 (예전 방식)
+        const L = ledgerRef.current;
+        const data = col === "settings" ? L.settings : (L[col] as Record<string, Obj>)[id];
+        ({ error } = data ? await supabase.from(TABLE[col]).upsert({ id, data }) : { error: null });
+      }
       if (error) {
+        // 실패한 변경은 다시 대기열로 (그 사이 새로 고친 값이 우선)
+        pending.current.set(key, deepMerge(patch, pending.current.get(key) ?? {}));
         toast(`저장하지 못했어요 (${error.message})`);
-        setSync("저장 실패");
-      } else if (!timers.current.size) setSync("저장됨");
+        setSync("저장 실패 — 잠시 후 다시 시도");
+        setTimeout(() => setRetryTick((t) => t + 1), 5000);
+      } else if (!pending.current.size) setSync("저장됨");
     },
     [supabase, toast],
   );
 
-  const schedule = useCallback(
-    (col: Col, id: string) => {
+  const flushAll = useCallback(() => {
+    for (const key of [...pending.current.keys()]) {
+      const i = key.indexOf("/");
+      void flush(key.slice(0, i) as Col, key.slice(i + 1));
+    }
+  }, [flush]);
+
+  const queue = useCallback(
+    (col: Col, id: string, patch: Obj, delay = 450) => {
       const key = `${col}/${id}`;
+      pending.current.set(key, deepMerge(pending.current.get(key) ?? {}, clone(patch)));
       clearTimeout(timers.current.get(key));
-      timers.current.set(key, setTimeout(() => flush(col, id), 450));
+      timers.current.set(key, setTimeout(() => flush(col, id), delay));
       setSync("저장 중…");
     },
     [flush],
   );
 
   const write = useCallback(
-    (col: Col, id: string, patch: Obj) => {
+    (col: Col, id: string, raw: Obj) => {
+      const patch = normalize(raw);
       const L = ledgerRef.current;
       let next: Ledger;
-      if (col === "settings") next = { ...L, settings: deepMerge(clone(L.settings) as Obj, patch) };
+      if (col === "settings") next = { ...L, settings: deepMerge(clone(L.settings) as Obj, clone(patch)) };
       else {
         const cur = (L[col] as Record<string, Obj>)[id];
         if (!cur) return;
-        next = { ...L, [col]: { ...L[col], [id]: deepMerge(clone(cur), patch) } };
+        next = { ...L, [col]: { ...L[col], [id]: deepMerge(clone(cur), clone(patch)) } };
         if ("photo" in patch && isStoragePath(cur.photo) && cur.photo !== patch.photo) void supabase.storage.from("photos").remove([cur.photo]);
       }
       commit(next);
-      schedule(col, col === "settings" ? SETTINGS_ID : id);
+      queue(col, col === "settings" ? SETTINGS_ID : id, patch);
     },
-    [commit, schedule, supabase],
+    [commit, queue, supabase],
   );
 
   const setSettings = useCallback((patch: Obj) => write("settings", SETTINGS_ID, patch), [write]);
 
   const create = useCallback(
-    (col: CollectionName, data: Obj) => {
+    (col: CollectionName, raw: Obj) => {
       const id = newId(col);
+      const data = normalize(raw);
       const L = ledgerRef.current;
       commit({ ...L, [col]: { ...L[col], [id]: data } });
-      supabase
-        .from(TABLE[col])
-        .insert({ id, data })
-        .then(({ error }) => (error ? toast(`추가하지 못했어요 (${error.message})`) : setSync("저장됨")));
+      queue(col, id, data, 0);
       return id;
     },
-    [commit, supabase, toast],
+    [commit, queue],
   );
 
   const remove = useCallback(
@@ -237,15 +319,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const doc = rest[id];
       delete rest[id];
       commit({ ...L, [col]: rest });
-      const files = [doc?.photo, ...(Array.isArray(doc?.photos) ? doc.photos : [])].filter(isStoragePath);
-      if (files.length) void supabase.storage.from("photos").remove(files);
-      clearTimeout(timers.current.get(`${col}/${id}`));
-      timers.current.delete(`${col}/${id}`);
-      supabase
-        .from(TABLE[col])
-        .delete()
-        .eq("id", id)
-        .then(({ error }) => error && toast(`삭제하지 못했어요 (${error.message})`));
+      const key = `${col}/${id}`;
+      const unsent = pending.current.get(key);
+      clearTimeout(timers.current.get(key));
+      timers.current.delete(key);
+      pending.current.delete(key);
+      (async () => {
+        await inflight.current.get(key);
+        // 아직 안 보낸 수정까지 담아서 휴지통으로
+        if (unsent) await supabase.rpc("patch_doc", { tbl: TABLE[col], doc_id: id, patch: unsent });
+        const { error } = await supabase.rpc("trash_doc", { tbl: TABLE[col], doc_id: id });
+        if (!error) return toast("삭제했어요 · 휴지통에서 30일 동안 되살릴 수 있어요");
+        if (!missingFn(error)) return toast(`삭제하지 못했어요 (${error.message})`);
+        // 마이그레이션 전 DB: 바로 삭제
+        const files = [doc?.photo, ...(Array.isArray(doc?.photos) ? doc.photos : [])].filter(isStoragePath);
+        if (files.length) void supabase.storage.from("photos").remove(files);
+        const r = await supabase.from(TABLE[col]).delete().eq("id", id);
+        if (r.error) toast(`삭제하지 못했어요 (${r.error.message})`);
+      })();
+    },
+    [commit, supabase, toast],
+  );
+
+  const restore = useCallback(
+    async (item: TrashItem) => {
+      const { error } = await supabase.rpc("restore_doc", { trash_id: item.id });
+      if (error) return toast(`되살리지 못했어요 (${error.message})`);
+      const col = (Object.entries(TABLE).find(([, t]) => t === item.tbl)?.[0] ?? item.tbl) as CollectionName;
+      const L = ledgerRef.current;
+      commit({ ...L, [col]: { ...L[col], [item.doc_id]: item.data } });
+      toast("되살렸어요");
     },
     [commit, supabase, toast],
   );
@@ -260,25 +363,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // 떠나기 전에 대기 중인 저장 밀어내기
+  // 저장 실패 후 5초 뒤 다시 시도
   useEffect(() => {
-    const h = (e: BeforeUnloadEvent) => {
-      if (timers.current.size) {
-        timers.current.forEach((_t, key) => {
-          const i = key.indexOf("/");
-          void flush(key.slice(0, i) as Col, key.slice(i + 1));
-        });
-        e.preventDefault();
-      }
+    if (retryTick) flushAll();
+  }, [retryTick, flushAll]);
+
+  // 앱을 닫거나 다른 앱으로 넘어갈 때 대기 중인 저장을 바로 보낸다 (요청은 keepalive라 페이지가 닫혀도 끝까지 간다)
+  useEffect(() => {
+    const onHide = () => document.visibilityState === "hidden" && flushAll();
+    const onUnload = (e: BeforeUnloadEvent) => {
+      if (!pending.current.size) return;
+      flushAll();
+      e.preventDefault();
     };
-    window.addEventListener("beforeunload", h);
-    return () => window.removeEventListener("beforeunload", h);
-  }, [flush]);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flushAll);
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flushAll);
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, [flushAll]);
 
   const s = useMemo(() => resolveSettings(ledger.settings), [ledger.settings]);
   const value = useMemo<Store>(
-    () => ({ ledger, s, sync, write, setSettings, create, remove, ui, setUI, drawer, setDrawer, toast, supabase }),
-    [ledger, s, sync, write, setSettings, create, remove, ui, setUI, drawer, toast, supabase],
+    () => ({ ledger, s, sync, write, setSettings, create, remove, restore, meta, me, needsMigration, ui, setUI, drawer, setDrawer, toast, supabase }),
+    [ledger, s, sync, write, setSettings, create, remove, restore, meta, me, needsMigration, ui, setUI, drawer, toast, supabase],
   );
 
   if (status === "denied")

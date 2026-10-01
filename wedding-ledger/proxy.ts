@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_PATHS = ["/login", "/auth/"];
+// /api/backup 은 로그인 대신 CRON_SECRET 으로 스스로 확인한다
+const PUBLIC_PATHS = ["/login", "/auth/", "/api/backup"];
 
 /** 세션 쿠키 갱신 + 비로그인 사용자는 /login 으로. 데이터 접근 권한 자체는 DB의 RLS가 판단한다. */
 export async function proxy(request: NextRequest) {

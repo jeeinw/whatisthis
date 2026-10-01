@@ -12,6 +12,10 @@ export const TABLE: Record<CollectionName | "settings", string> = {
   budget: "budget",
   homes: "homes",
   priceLists: "price_lists",
+  guests: "guests",
+  gifts: "gifts",
+  payments: "payments",
+  tasks: "tasks",
   settings: "settings",
 };
 

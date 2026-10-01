@@ -7,7 +7,7 @@ import type { DeepPartial, Ledger, Settings } from "../types";
 export const ROOT = join(__dirname, "../..");
 
 export function emptyLedger(): Ledger {
-  return { planners: {}, vendors: {}, quotes: {}, extras: {}, halls: {}, dresses: {}, budget: {}, homes: {}, priceLists: {}, settings: {} };
+  return { planners: {}, vendors: {}, quotes: {}, extras: {}, halls: {}, dresses: {}, budget: {}, homes: {}, priceLists: {}, guests: {}, gifts: {}, payments: {}, tasks: {}, settings: {} };
 }
 
 /** 예산 구조를 흉내 낸 합성 데이터 (subs, link, cap, payer, 신혼집 그룹 포함). */

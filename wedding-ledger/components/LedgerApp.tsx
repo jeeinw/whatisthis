@@ -14,6 +14,7 @@ import { DressPrices } from "./tabs/DressPrices";
 import { Halls } from "./tabs/Halls";
 import { Board } from "./tabs/Board";
 import { House } from "./tabs/House";
+import { TrashPanel } from "./TrashPanel";
 
 export function LedgerApp() {
   return (
@@ -54,6 +55,7 @@ function ExportButton() {
 
 function Shell() {
   const { ledger, s, sync, ui, setUI } = useStore();
+  const [trash, setTrash] = useState(false);
   const counts = useMemo(() => {
     const v = listOf<Vendor>(ledger.vendors);
     const vc = (c: string) => v.filter((x) => x.cat === c).length;
@@ -89,6 +91,7 @@ function Shell() {
         <div className="top-actions">
           <span className="sync">{sync}</span>
           <ExportButton />
+          <button className="btn small ghost" onClick={() => setTrash(true)}>휴지통</button>
           <form action="/auth/signout" method="post">
             <button className="btn small ghost">로그아웃</button>
           </form>
@@ -113,6 +116,7 @@ function Shell() {
          <Vendors cat={tab as "studio" | "dress" | "makeup"} go={go} />}
       </main>
       <Drawer />
+      {trash && <TrashPanel onClose={() => setTrash(false)} />}
     </div>
   );
 }
