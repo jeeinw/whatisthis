@@ -70,7 +70,7 @@ export function Vendors({ cat, go }: { cat: "studio" | "dress" | "makeup"; go: (
                       <button className="thumb empty" onClick={() => pick("vendors", r.id)} aria-label={`${r.name} 사진 올리기`}>사진</button>
                     )}
                   </td>
-                  <td className="name"><button onClick={() => setDrawer({ col: "vendors", id: r.id })}>{r.name}</button></td>
+                  <td className="name"><button onClick={() => setDrawer({ col: "vendors", id: r.id })}>{r.name}</button>{!!r.photos?.length && <> <span className="pill">사진 {r.photos.length}</span></>}</td>
                   <td className="small">{r.planner}</td>
                   <td className="wrap small">{r.features}</td>
                   <td className="wrap small" style={{ minWidth: 140 }}>{r.location}</td>

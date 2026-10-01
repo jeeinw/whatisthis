@@ -5,7 +5,7 @@ import { dressPriceIndex } from "@/lib/calc/dress";
 import { isNum, won } from "@/lib/format";
 import type { ScoreKind } from "@/lib/types";
 import { useStore } from "./store";
-import { blogLink, Edited, Photo, stripParen, TextCell, useDraft, usePickPhoto, useUploadPhoto } from "./shared";
+import { blogLink, Edited, Photo, stripParen, TextCell, useDraft, usePhotoUrl, usePickPhoto, useUploadPhoto } from "./shared";
 import { RealPrice } from "./RealPrice";
 import type { Home } from "@/lib/types";
 
@@ -137,9 +137,12 @@ function EntityDrawer({ col, id }: { col: "planners" | "vendors" | "halls" | "ho
             ))}
           </div>
         </div>
+        {(col === "halls" || col === "vendors") && (
+          <SitePhotos col={col} id={id} photos={(d.photos as string[] | undefined) ?? []} label={col === "halls" ? "투어 사진" : "상담·투어 사진"} />
+        )}
         {col === "homes" && (
           <>
-            <SitePhotos id={id} photos={(d.photos as string[] | undefined) ?? []} />
+            <SitePhotos col="homes" id={id} photos={(d.photos as string[] | undefined) ?? []} label="현장 사진" />
             <div className="checklist">
               <div className="muted small">임장 체크리스트 · {Object.values(d.checks || {}).filter(Boolean).length}/{CHECKS.reduce((a, g) => a + g[1].length, 0)}</div>
               {CHECKS.map(([g, items]) => (
@@ -224,7 +227,8 @@ function DressPriceDetail({ k }: { k: string }) {
 }
 
 /** 임장 현장 사진: 카메라로 바로 찍거나 앨범에서 여러 장 골라 올린다. */
-function SitePhotos({ id, photos }: { id: string; photos: string[] }) {
+/** 여러 장 사진 (임장 현장·웨딩홀 투어·업체 상담). 누르면 원본을 새 탭에서 연다. */
+function SitePhotos({ col, id, photos, label }: { col: "homes" | "halls" | "vendors"; id: string; photos: string[]; label: string }) {
   const { ledger, write, supabase, toast } = useStore();
   const upload = useUploadPhoto();
   const [busy, setBusy] = useState(0);
@@ -235,12 +239,12 @@ function SitePhotos({ id, photos }: { id: string; photos: string[] }) {
     setBusy(list.length);
     let acc = photos;
     for (const f of list) {
-      const path = await upload("homes", id, f);
+      const path = await upload(col, id, f);
       if (path) {
-        const cur = ((ledger.homes[id] as { photos?: string[] } | undefined)?.photos ?? []);
+        const cur = ((ledger[col][id] as { photos?: string[] } | undefined)?.photos ?? []);
         // 업로드 사이에 다른 사진이 추가됐을 수 있어 매번 최신 배열에 붙인다
         acc = [...new Set([...cur, ...acc, path])];
-        write("homes", id, { photos: acc });
+        write(col, id, { photos: acc });
       }
       setBusy((n) => n - 1);
     }
@@ -249,17 +253,17 @@ function SitePhotos({ id, photos }: { id: string; photos: string[] }) {
 
   function del(path: string) {
     if (!confirm("이 사진을 지울까요?")) return;
-    write("homes", id, { photos: photos.filter((p) => p !== path) });
+    write(col, id, { photos: photos.filter((p) => p !== path) });
     void supabase.storage.from("photos").remove([path]);
   }
 
   return (
     <div>
-      <div className="muted small" style={{ marginBottom: 6 }}>현장 사진 {photos.length ? `${photos.length}장` : ""}</div>
+      <div className="muted small" style={{ marginBottom: 6 }}>{label} {photos.length ? `${photos.length}장` : ""}</div>
       <div className="sitephotos">
         {photos.map((p) => (
           <div key={p} className="sp">
-            <Photo path={p} alt="현장 사진" />
+            <PhotoLink path={p} alt={label} />
             <button className="sp-del" aria-label="사진 지우기" onClick={() => del(p)}>×</button>
           </div>
         ))}
@@ -275,5 +279,16 @@ function SitePhotos({ id, photos }: { id: string; photos: string[] }) {
         </label>
       </div>
     </div>
+  );
+}
+
+function PhotoLink({ path, alt }: { path: string; alt: string }) {
+  const url = usePhotoUrl(path);
+  return url ? (
+    <a href={url} target="_blank" rel="noopener" aria-label={`${alt} 크게 보기`}>
+      <Photo path={path} alt={alt} />
+    </a>
+  ) : (
+    <Photo path={path} alt={alt} />
   );
 }

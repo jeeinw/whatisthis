@@ -110,6 +110,7 @@ export function Halls() {
                   <td className="name">
                     <button onClick={() => setDrawer({ col: "halls", id: r.id })}>{r.name}</button>
                     {r.plannerQuote && <><br /><span className="pill src">{r.plannerQuote.cat}</span></>}
+                    {!!r.photos?.length && <> <span className="pill">사진 {r.photos.length}</span></>}
                   </td>
                   <td><input type="radio" name="mainHall" checked={s.mainHall === r.id} onChange={() => setSettings({ mainHall: r.id })} aria-label={`${r.name} 기준 홀로 지정`} /></td>
                   <td className="small">{r.gu} {r.dong}<br /><span className="muted">{r.zone}</span></td>

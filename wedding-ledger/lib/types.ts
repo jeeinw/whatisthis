@@ -46,6 +46,8 @@ export interface Vendor {
   scores?: Scores;
   status?: string;
   photo?: string;
+  /** 상담·투어 사진 (Storage 경로) */
+  photos?: string[];
   memo?: string;
 }
 
@@ -134,6 +136,9 @@ export interface Hall {
   status?: string;
   source?: string;
   memo?: string;
+  photo?: string;
+  /** 투어 사진 (Storage 경로) */
+  photos?: string[];
 }
 
 export interface PriceListRow {
