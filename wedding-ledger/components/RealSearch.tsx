@@ -3,7 +3,7 @@ import { useState } from "react";
 import { guOfLawd, SEOUL_GU, SEOUL_LAWD } from "@/lib/realestate";
 import { eok } from "@/lib/format";
 import { useStore } from "./store";
-import { DealList, StatsTable, useRealPrice } from "./realestate";
+import { DealList, StatsTable, TrendBox, useRealPrice } from "./realestate";
 import { geocode, type MapPoint } from "./KakaoMap";
 
 /** 단지를 등록하지 않고 구 + 단지명으로 바로 실거래가 조회. 결과 위치는 onPoint 로 지도에 넘긴다. */
@@ -14,7 +14,7 @@ export function RealSearch({ onPoint }: { onPoint: (p: MapPoint | null) => void 
   const [code, setCode] = useState("");
   const [apt, setApt] = useState("");
   const [dong, setDong] = useState("");
-  const [months, setMonths] = useState(6);
+  const [months, setMonths] = useState(12);
   const [area, setArea] = useState<number | null>(null);
   const lawd = gu === "기타" ? code.trim() : SEOUL_LAWD[gu];
 
@@ -81,6 +81,7 @@ export function RealSearch({ onPoint }: { onPoint: (p: MapPoint | null) => void 
               : `‘${apt}’과 일치하는 거래가 없어요. 국토부 표기(띄어쓰기 없이, 예: 래미안퍼스티지)로 다시 찾아보세요.`}
           </p>
           <StatsTable stats={data.stats} highlight={area} />
+          <TrendBox key={`${data.fetchedAt}-${area}`} data={data} initialArea={area} />
           {(data.trades.length > 0 || data.rents.length > 0) && <DealList trades={data.trades} rents={data.rents} />}
           {data.stats.length > 0 && (
             <div className="filters" style={{ marginTop: 10 }}>

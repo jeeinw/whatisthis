@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { closestArea, matchesApt, parseRtmsXml, recentMonths, resolveLawd, rtmsUrl, summarize, toRent, toTrade } from "../realestate";
+import { closestArea, matchesApt, monthlySeries, parseRtmsXml, recentMonths, resolveLawd, rtmsUrl, seriesChange, summarize, toRent, toTrade } from "../realestate";
 
 // 명세(Swagger)의 필드 이름으로 만든 응답 샘플
 const TRADE_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -80,5 +80,25 @@ describe("실거래가 API", () => {
     expect(s[0].wolseCount).toBe(1);
     expect(closestArea(s, 84)?.area).toBe(85);
     expect(closestArea(s, 59)).toBeNull();
+  });
+});
+
+describe("월별 추이", () => {
+  const T = (date: string, price: number, area = 84.9, canceled = false) => ({ apt: "A", dong: "d", jibun: "1", area, date, price, floor: 5, canceled });
+  const R = (date: string, deposit: number, monthly = 0, area = 84.8) => ({ apt: "A", dong: "d", jibun: "1", area, date, deposit, monthly, floor: 3, contractType: "" });
+  it("면적별·월별 평균, 빈 달 유지, 해제·월세 제외", () => {
+    const s = monthlySeries(
+      [T("2026-07-03", 10e8), T("2026-07-20", 12e8), T("2026-09-01", 13e8), T("2026-09-02", 1e8, 84.9, true), T("2026-09-05", 7e8, 59.9)],
+      [R("2026-08-10", 6e8), R("2026-08-11", 1e8, 1e6)],
+      ["202609", "202608", "202607"],
+    );
+    expect(Object.keys(s).map(Number).sort()).toEqual([60, 85]);
+    expect(s[85].map((p) => p.ym)).toEqual(["202607", "202608", "202609"]);
+    expect(s[85][0].trade).toEqual({ count: 2, avg: 11e8, min: 10e8, max: 12e8 });
+    expect(s[85][1].trade.count).toBe(0);
+    expect(s[85][1].jeonse).toEqual({ count: 1, avg: 6e8 });
+    expect(s[85][2].trade.avg).toBe(13e8);
+    expect(seriesChange(s[85], "trade")).toBe(18.2);
+    expect(seriesChange(s[85], "jeonse")).toBeNull();
   });
 });

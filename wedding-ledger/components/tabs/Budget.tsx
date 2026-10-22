@@ -11,7 +11,7 @@ import { ManCell, TextCell } from "../shared";
 const GROUP_ORDER = [...WEDDING_GROUPS.slice(0, 4), "신혼여행", HOUSE_GROUP, "관리", "기타"];
 
 export function Budget({ go }: { go: (tab: string) => void }) {
-  const { ledger, s, write, create, ui, setUI } = useStore();
+  const { ledger, s, write, create, remove, ui, setUI } = useStore();
   const B = budgetCalc(ledger, s);
   const setSubs = (id: string, fn: (subs: BudgetSub[]) => void) => {
     const subs = clone(ledger.budget[id]?.subs || []);
@@ -28,7 +28,7 @@ export function Budget({ go }: { go: (tab: string) => void }) {
       <Fragment key={it.id}>
         <tr>
           <td className="wrap" style={{ minWidth: 200 }}>
-            <b>{it.name}</b>
+            {it.link ? <b>{it.name}</b> : <TextCell className="cell name-edit" value={it.name} label="항목 이름" onChange={(v) => write("budget", it.id, { name: v })} />}
             {it.link && <> <span className="pill">자동</span></>}
             {it.subs && (
               <> <button className="linkbtn" onClick={() => toggle(it.id)}>{open ? "세부 접기" : `세부 ${it.subs.length}개`}</button></>
@@ -67,6 +67,12 @@ export function Budget({ go }: { go: (tab: string) => void }) {
           </td>
           <td>
             <TextCell value={it.memo} label="메모" placeholder="메모" onChange={(v) => write("budget", it.id, { memo: v })} />
+            {/* 자동 항목(웨딩홀·스드메 등)은 다른 탭과 연결돼 있어 지우지 않는다 */}
+            {!it.link && (
+              <button className="linkbtn" style={{ marginLeft: 6 }} aria-label={`${it.name} 삭제`} onClick={() => confirm(`'${it.name}'을(를) 삭제할까요?`) && remove("budget", it.id)}>
+                삭제
+              </button>
+            )}
           </td>
         </tr>
         {it.subs && open && (
@@ -123,7 +129,7 @@ export function Budget({ go }: { go: (tab: string) => void }) {
         return (
           <div className="bgroup" key={g}>
             <div className="bgroup-head"><h3>{g}</h3><span className="gt">{manWon(G.total)}</span></div>
-            <div className="tablebox">
+            <div className="tablebox cards">
               <table className="sheet">
                 <thead>
                   <tr>

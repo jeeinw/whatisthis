@@ -5,6 +5,8 @@ import type { ScoreKind } from "./types";
 export const TABS = [
   { id: "summary", label: "요약" },
   { id: "budget", label: "전체 예산" },
+  { id: "schedule", label: "일정" },
+  { id: "guests", label: "하객·축의금" },
   { id: "planner", label: "플래너·견적" },
   { id: "studio", label: "스튜디오" },
   { id: "dress", label: "드레스" },

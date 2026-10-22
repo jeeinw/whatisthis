@@ -4,7 +4,8 @@ import { dressPriceIndex } from "./calc/dress";
 import { equity, homeCalc } from "./calc/housing";
 import { avgScore, budgetCalc, hallEstimate, listOf, mainQuote } from "./calc/wedding";
 import { isNum } from "./format";
-import type { Dress, Extra, Hall, Home, Ledger, Planner, ScoreKind, Scores, Settings, Vendor } from "./types";
+import { byDue, taskDue } from "./calc/schedule";
+import type { Dress, Extra, Gift, Guest, Hall, Home, Ledger, Payment, Planner, ScoreKind, Scores, Settings, Task, Vendor } from "./types";
 
 export type SheetRow = Record<string, string | number | boolean | null | undefined>;
 export interface Sheet {
@@ -90,5 +91,22 @@ export function buildSheets(ledger: Ledger, s: Settings): Sheet[] {
   );
 
   add("드레스보드", listOf<Dress>(ledger.dresses).map((r) => ({ 샵: r.shop, 실루엣: r.silhouette, 용도: r.use, 하트: r.rating, 메모: r.memo })));
+
+  // 웹앱에서 새로 생긴 시트 (legacy 11개 뒤에 붙임)
+  add("하객명단", listOf<Guest>(ledger.guests).map((r) => ({ 이름: r.name, 측: r.side, 그룹: r.group, 인원: or(r.count), 청첩장: r.invite ? "O" : "", 참석: r.rsvp, 연락처: r.phone, 메모: r.memo })));
+  add("축의금", listOf<Gift>(ledger.gifts).map((r) => ({ 이름: r.name, 측: r.side, 관계: r.relation, 금액: or(r.amount), 방법: r.method, 감사인사: r.thanks ? "O" : "", 메모: r.memo })));
+  add(
+    "지불일정",
+    listOf<Payment>(ledger.payments)
+      .sort(byDue)
+      .map((r) => ({ 날짜: r.due, 항목: r.title, 단계: r.stage, 금액: or(r.amount), 지불: r.paid ? "O" : "", 지불일: r.paidDate, 부담: r.payer, 예산항목: r.budgetId ? (ledger.budget[r.budgetId]?.name ?? "") : "", 메모: r.memo })),
+  );
+  add(
+    "준비체크리스트",
+    listOf<Task>(ledger.tasks)
+      .map((r) => ({ ...r, _due: taskDue(r, s.weddingDate) ?? "" }))
+      .sort((a, b) => (a._due || "9999").localeCompare(b._due || "9999"))
+      .map((r) => ({ 마감일: r._due, 할일: r.title, 분류: r.cat, "D-n": or(r.dday), 완료: r.done ? "O" : "", 메모: r.memo })),
+  );
   return sheets;
 }

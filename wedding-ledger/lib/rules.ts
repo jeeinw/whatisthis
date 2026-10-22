@@ -14,6 +14,15 @@
  * - 서울시 신혼부부 임차보증금 이자지원 / 신혼부부 전용 버팀목: 2026년 공고 기준 추정
  */
 
+/** 규정 기준일 — 화면에 표시하고, 6개월이 지나면 갱신 안내를 띄운다. 규정을 고치면 같이 바꿀 것. */
+export const RULES_AS_OF = "2026-09-01";
+
+/** 기준일로부터 지난 개월 수 */
+export function rulesAgeMonths(today = new Date()): number {
+  const [y, m] = RULES_AS_OF.split("-").map(Number);
+  return (today.getFullYear() - y) * 12 + (today.getMonth() + 1 - m);
+}
+
 const EOK = 1e8;
 const MAN = 1e4;
 

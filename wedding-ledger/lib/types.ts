@@ -46,6 +46,8 @@ export interface Vendor {
   scores?: Scores;
   status?: string;
   photo?: string;
+  /** 상담·투어 사진 (Storage 경로) */
+  photos?: string[];
   memo?: string;
 }
 
@@ -102,6 +104,8 @@ export interface Hall {
   mealMax?: Won;
   rental?: Won;
   rentalNote?: string;
+  /** 가격을 마지막으로 확인한 날 (YYYY-MM-DD) */
+  checkedAt?: string;
   minGuests?: number | null;
   maxGuests?: number | null;
   times?: string;
@@ -132,6 +136,9 @@ export interface Hall {
   status?: string;
   source?: string;
   memo?: string;
+  photo?: string;
+  /** 투어 사진 (Storage 경로) */
+  photos?: string[];
 }
 
 export interface PriceListRow {
@@ -219,6 +226,65 @@ export interface Home {
   /** 지도 좌표 (한 번 찾으면 저장) */
   lat?: number | null;
   lng?: number | null;
+  /** 좌표를 찾을 때 쓴 이름·위치 (바뀌면 다시 찾음) */
+  geoKey?: string;
+}
+
+export type Side = "J" | "D" | "공동";
+
+/** 하객 명단 — 한 줄이 한 사람 또는 한 가족(count 명) */
+export interface Guest {
+  id: string;
+  name: string;
+  side?: Side;
+  group?: string;
+  count?: number | null;
+  invite?: boolean;
+  rsvp?: "미정" | "참석" | "불참";
+  phone?: string;
+  memo?: string;
+}
+
+/** 축의금 장부 */
+export interface Gift {
+  id: string;
+  name: string;
+  side?: Side;
+  relation?: string;
+  amount?: Won;
+  method?: string;
+  guestId?: string;
+  thanks?: boolean;
+  memo?: string;
+}
+
+export type PayStage = "계약금" | "중도금" | "잔금" | "기타";
+
+/** 지불 일정 — 업체별 계약금·중도금·잔금 */
+export interface Payment {
+  id: string;
+  title: string;
+  vendor?: string;
+  budgetId?: string;
+  stage?: PayStage;
+  amount?: Won;
+  due?: string;
+  paid?: boolean;
+  paidDate?: string;
+  payer?: string;
+  memo?: string;
+}
+
+/** D-day 준비 체크리스트 — dday(결혼식 n일 전) 또는 due(날짜) 중 하나로 마감 */
+export interface Task {
+  id: string;
+  title: string;
+  cat?: string;
+  dday?: number | null;
+  due?: string;
+  done?: boolean;
+  doneAt?: string;
+  memo?: string;
 }
 
 export interface Dress {
@@ -301,13 +367,18 @@ export interface Ledger {
   budget: Record<string, Omit<BudgetItem, "id">>;
   homes: Record<string, Omit<Home, "id">>;
   priceLists: Record<string, Omit<PriceList, "id">>;
+  guests: Record<string, Omit<Guest, "id">>;
+  gifts: Record<string, Omit<Gift, "id">>;
+  payments: Record<string, Omit<Payment, "id">>;
+  tasks: Record<string, Omit<Task, "id">>;
   /** 저장된 원본 설정 (부분일 수 있음). 계산 시 DEF_SETTINGS와 병합한다. */
   settings: DeepPartial<Settings>;
 }
 
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
-export const COLLECTIONS = [
+/** 아티팩트 DB에서 옮겨 온 컬렉션 (seed import 대상) */
+export const SEED_COLLECTIONS = [
   "planners",
   "vendors",
   "quotes",
@@ -318,4 +389,10 @@ export const COLLECTIONS = [
   "homes",
   "priceLists",
 ] as const;
+export type SeedCollection = (typeof SEED_COLLECTIONS)[number];
+
+/** 웹앱에서 새로 생긴 컬렉션 (0002 마이그레이션) */
+export const NEW_COLLECTIONS = ["guests", "gifts", "payments", "tasks"] as const;
+
+export const COLLECTIONS = [...SEED_COLLECTIONS, ...NEW_COLLECTIONS] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];

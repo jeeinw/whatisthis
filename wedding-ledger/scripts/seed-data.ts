@@ -2,10 +2,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { docsToRows, SETTINGS_ID, TABLE, type Row } from "../lib/db";
-import { COLLECTIONS, type CollectionName } from "../lib/types";
+import { SEED_COLLECTIONS, type SeedCollection } from "../lib/types";
 
 /** 아티팩트 DB 내보내기 기준 건수 (CLAUDE.md). 다르면 경고만 한다 — 이관 직전 재내보내기로 바뀔 수 있음. */
-export const EXPECTED: Record<CollectionName, number> = {
+export const EXPECTED: Record<SeedCollection, number> = {
   planners: 6,
   vendors: 8,
   quotes: 1,
@@ -18,7 +18,7 @@ export const EXPECTED: Record<CollectionName, number> = {
 };
 
 export interface SeedPlan {
-  tables: { table: string; collection: CollectionName | "settings"; rows: Row[] }[];
+  tables: { table: string; collection: SeedCollection | "settings"; rows: Row[] }[];
   warnings: string[];
 }
 
@@ -45,7 +45,7 @@ export function buildSeedPlan(root: string): SeedPlan {
   if (!isDocMap(empties)) throw new Error("_empty_collections.json 형식 오류");
 
   const tables: SeedPlan["tables"] = [];
-  for (const c of COLLECTIONS) {
+  for (const c of SEED_COLLECTIONS) {
     const file = join(seedDir, `${c}.json`);
     let docs: unknown;
     if (existsSync(file)) docs = readJson(file);

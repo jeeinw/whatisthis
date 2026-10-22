@@ -4,7 +4,7 @@ import { avgScore, extrasTotal, listOf, mainQuote, quoteTotal } from "@/lib/calc
 import { isNum, signed, won } from "@/lib/format";
 import type { Extra, LineupKey, Planner as PlannerT } from "@/lib/types";
 import { useStore } from "../store";
-import { AvgCell, blogLink, ScoreSelect, StatusSelect, statusRank, TextCell, useSort } from "../shared";
+import { AvgCell, blogLink, ScoreSelect, StatusSelect, statusRank, TextCell, useDraft, useSort } from "../shared";
 
 export function Planner() {
   const { ledger, s, create, setDrawer } = useStore();
@@ -27,7 +27,7 @@ export function Planner() {
           플래너 추가
         </button>
       </div>
-      <div className="tablebox">
+      <div className="tablebox cards">
         <table className="sheet">
           <thead>
             <tr>
@@ -68,7 +68,7 @@ export function Planner() {
 }
 
 function Quote({ qid }: { qid: string }) {
-  const { ledger, write, create } = useStore();
+  const { ledger, write, create, remove } = useStore();
   const q = ledger.quotes[qid];
   const qt = quoteTotal(q);
   const o = q.options || {};
@@ -125,9 +125,9 @@ function Quote({ qid }: { qid: string }) {
       <div className="note small">{q.notes || ""}</div>
       <h3 style={{ marginTop: 18 }}>계약서 밖에서 추가될 수 있는 비용</h3>
       <p className="muted small" style={{ margin: "0 0 8px" }}>체크하고 예상 금액을 넣으면 전체 예산의 ‘스드메 추가비용’에 더해져요.</p>
-      <div className="tablebox extras">
+      <div className="tablebox extras cards">
         <table className="sheet">
-          <thead><tr><th>반영</th><th>구분</th><th>항목</th><th>범위</th><th>예상 금액 (원)</th></tr></thead>
+          <thead><tr><th>반영</th><th>구분</th><th>항목</th><th>범위</th><th>예상 금액 (원)</th><th></th></tr></thead>
           <tbody>
             {extras.map((x) => (
               <tr key={x.id}>
@@ -138,10 +138,11 @@ function Quote({ qid }: { qid: string }) {
                 <td>
                   <WonInput value={x.amount} label={`${x.name} 예상 금액`} onChange={(v) => write("extras", x.id, { amount: v })} />
                 </td>
+                <td><button className="linkbtn" aria-label={`${x.name} 삭제`} onClick={() => confirm(`'${x.name}'을(를) 삭제할까요?`) && remove("extras", x.id)}>삭제</button></td>
               </tr>
             ))}
           </tbody>
-          <tfoot><tr><td colSpan={4} style={{ textAlign: "right" }} className="muted">체크한 합계</td><td className="num"><b>{won(ex)}</b></td></tr></tfoot>
+          <tfoot><tr><td colSpan={4} style={{ textAlign: "right" }} className="muted">체크한 합계</td><td className="num"><b>{won(ex)}</b></td><td></td></tr></tfoot>
         </table>
       </div>
       <div style={{ marginTop: 10 }}>
@@ -153,14 +154,16 @@ function Quote({ qid }: { qid: string }) {
 
 /** 원 단위 숫자 입력 (추가비용 표 — legacy와 같이 원으로 입력). */
 function WonInput({ value, label, onChange }: { value: unknown; label: string; onChange: (v: number | null) => void }) {
+  const { draft, setDraft, bind } = useDraft(isNum(value) ? String(value) : "");
   return (
     <input
       type="number"
       step={10000}
       min={0}
       aria-label={label}
-      defaultValue={isNum(value) ? value : ""}
-      onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+      value={draft}
+      {...bind}
+      onChange={(e) => (setDraft(e.target.value), onChange(e.target.value === "" ? null : Number(e.target.value)))}
     />
   );
 }

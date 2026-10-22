@@ -211,3 +211,25 @@ export function homeCalc(r: Omit<Home, "id">, ledger: Ledger, s: Settings, eq: E
   const c = buyCalc(price, ledger, s, eq);
   return { ok: c.gap >= 0, gap: c.gap, monthly: c.monthly, loan: c.L.lim, bind: c.L.bind as BindReason | null };
 }
+
+export type Verdict = "ok" | "short" | "none";
+
+/** 임장 후보 전체 자금 판정 요약 (제외 상태는 뺀다) */
+export function homesVerdict(ledger: Ledger, s: Settings) {
+  const eq = equity(ledger, s);
+  const rows = Object.entries(ledger.homes)
+    .filter(([, h]) => h.status !== "제외")
+    .map(([id, h]) => {
+      const c = homeCalc(h, ledger, s, eq);
+      const verdict: Verdict = !c ? "none" : c.ok ? "ok" : "short";
+      return { id, name: h.name, verdict, gap: c?.gap ?? null, monthly: c?.monthly ?? null };
+    });
+  const count = (v: Verdict) => rows.filter((r) => r.verdict === v).length;
+  return { rows, ok: count("ok"), short: count("short"), none: count("none") };
+}
+
+/** 지도·요약용 한 줄: '가능 · 여유 3,000만' / '부족 1억 2,000만' / '가격 입력 필요' */
+export function verdictText(v: { verdict: Verdict; gap: number | null }, eokFmt: (n: number) => string): string {
+  if (v.verdict === "none" || v.gap == null) return "가격 입력 필요";
+  return v.verdict === "ok" ? `가능 · 여유 ${eokFmt(v.gap)}` : `부족 ${eokFmt(-v.gap)}`;
+}

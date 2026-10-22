@@ -1,10 +1,12 @@
 "use client";
 import { PAYERS, WEDDING_GROUPS } from "@/lib/constants";
-import { houseSummary } from "@/lib/calc/housing";
+import { homesVerdict, houseSummary } from "@/lib/calc/housing";
 import { avgScore, budgetCalc, extrasTotal, hallEstimate, listOf, mainQuote, quoteTotal } from "@/lib/calc/wedding";
 import { eok, isNum, manWon } from "@/lib/format";
 import type { Hall, Home, Planner, ScoreKind, Vendor } from "@/lib/types";
 import { useStore } from "../store";
+import { Recent } from "../Recent";
+import { Upcoming } from "./Schedule";
 import { ManInput } from "../shared";
 
 type Scored = { id: string; name: string; status?: string; scores?: Record<string, number | null | undefined> };
@@ -21,6 +23,7 @@ export function Summary({ go }: { go: (tab: string) => void }) {
   const mh = ledger.halls[s.mainHall];
   const mhEst = mh ? hallEstimate(mh, s.guests) : null;
   const hc = houseSummary(ledger, s);
+  const hv = homesVerdict(ledger, s);
   const hcLine = hc.mode === "buy" ? `${eok(s.house.price)} 기준, 대출 ${eok(hc.loan)}` : `보증금 ${eok(s.house.deposit)}, ${(hc.productLabel || "").replace(/\s*\(.*\)/, "")}`;
   const vendors = listOf<Vendor>(ledger.vendors);
 
@@ -116,6 +119,12 @@ export function Summary({ go }: { go: (tab: string) => void }) {
               <div className="k">신혼집 · {s.house.mode === "buy" ? "매매" : "전세"}</div>
               <div className={`v ${hc.gap < 0 ? "bad" : "good"}`}>{hc.gap < 0 ? "부족 " + eok(-hc.gap) : "여유 " + eok(hc.gap)}</div>
               <div className="s">{hcLine} <button className="linkbtn" onClick={() => go("house")}>자세히</button></div>
+              {hv.rows.length > 0 && (
+                <div className="s">
+                  임장 후보 {hv.rows.length}곳: <span className="ok">가능 {hv.ok}</span> · <span className={hv.short ? "no" : undefined}>부족 {hv.short}</span>
+                  {hv.none ? ` · 가격 입력 필요 ${hv.none}` : ""}
+                </div>
+              )}
             </div>
           </div>
           {B.capless.length > 0 && (
@@ -148,6 +157,8 @@ export function Summary({ go }: { go: (tab: string) => void }) {
           {pickBox("신혼집 후보", listOf<Home>(ledger.homes), "home", "homes", "house")}
         </div>
       </section>
+      <Upcoming go={go} />
+      <Recent go={go} />
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { eok, isNum } from "@/lib/format";
 import { listOf } from "@/lib/calc/wedding";
+import { homesVerdict, verdictText, type Verdict } from "@/lib/calc/housing";
 import type { Home } from "@/lib/types";
 import { useStore } from "./store";
 
@@ -33,14 +34,16 @@ function loadKakao(): Promise<Kakao> {
   return loading;
 }
 
-/** 주소 → 좌표, 실패하면 키워드(장소) 검색. */
+/** 주소 → 좌표, 실패하면 키워드(장소) 검색. 빈 문자열은 건너뛴다. */
 export async function geocode(address: string, keyword?: string): Promise<{ lat: number; lng: number } | null> {
   const kakao = await loadKakao();
   const S = kakao.maps.services;
-  const byAddr = await new Promise<{ lat: number; lng: number } | null>((res) =>
-    new S.Geocoder().addressSearch(address, (r: any[], st: string) => res(st === S.Status.OK && r[0] ? { lat: +r[0].y, lng: +r[0].x } : null)),
-  );
-  if (byAddr || !keyword) return byAddr;
+  const byAddr = address.trim()
+    ? await new Promise<{ lat: number; lng: number } | null>((res) =>
+        new S.Geocoder().addressSearch(address, (r: any[], st: string) => res(st === S.Status.OK && r[0] ? { lat: +r[0].y, lng: +r[0].x } : null)),
+      )
+    : null;
+  if (byAddr || !keyword?.trim()) return byAddr;
   return new Promise((res) =>
     new S.Places().keywordSearch(keyword, (r: any[], st: string) => {
       if (st !== S.Status.OK || !r.length) return res(null);
@@ -50,6 +53,14 @@ export async function geocode(address: string, keyword?: string): Promise<{ lat:
   );
 }
 
+/** 위치를 찾을 근거(구 또는 법정동코드 + 이름)가 있는 후보만. 이 값이 바뀌면 좌표를 다시 찾는다. */
+export function geoKeyOf(h: Pick<Home, "name" | "aptNm" | "gu" | "dong" | "jibun" | "lawdCd">): string | null {
+  const name = (h.aptNm || h.name || "").trim();
+  const where = (h.gu || "").trim() || (h.lawdCd || "").trim();
+  if (!name || !where || name === "새 단지") return null;
+  return [name, h.gu ?? "", h.dong ?? "", h.jibun ?? "", h.lawdCd ?? ""].join("|");
+}
+
 export interface MapPoint {
   key: string;
   label: string;
@@ -57,6 +68,8 @@ export interface MapPoint {
   lat: number;
   lng: number;
   kind: "home" | "search";
+  /** 자금 판정 색 (임장 후보) */
+  tone?: Verdict;
   onClick?: () => void;
 }
 
@@ -84,7 +97,7 @@ export function KakaoMap({ points, height = 320 }: { points: MapPoint[]; height?
   }, []);
 
   // 점이 바뀌면 오버레이 다시 그리기 + 화면 맞추기
-  const sig = points.map((p) => `${p.key}:${p.lat},${p.lng}:${p.label}:${p.sub}`).join("|");
+  const sig = points.map((p) => `${p.key}:${p.lat},${p.lng}:${p.label}:${p.sub}:${p.tone}`).join("|");
   useEffect(() => {
     const kakao = window.kakao;
     if (!map.current || !kakao?.maps) return;
@@ -95,7 +108,7 @@ export function KakaoMap({ points, height = 320 }: { points: MapPoint[]; height?
     for (const p of points) {
       const pos = new kakao.maps.LatLng(p.lat, p.lng);
       const node = document.createElement("button");
-      node.className = `kmap-pin ${p.kind}`;
+      node.className = `kmap-pin ${p.kind} ${p.tone ?? ""}`;
       node.innerHTML = `<b></b><span></span>`;
       (node.querySelector("b") as HTMLElement).textContent = p.label;
       (node.querySelector("span") as HTMLElement).textContent = p.sub ?? "";
@@ -123,36 +136,59 @@ export function KakaoMap({ points, height = 320 }: { points: MapPoint[]; height?
 
 /** 임장 후보들을 지도에 표시. 좌표가 없는 후보는 한 번 찾아서 저장해 둔다. */
 export function HomesMap({ extra }: { extra?: MapPoint | null }) {
-  const { ledger, write, setDrawer } = useStore();
+  const { ledger, s, write, setDrawer } = useStore();
   const tried = useRef(new Set<string>());
   const homes = listOf<Home>(ledger.homes);
+  const V = homesVerdict(ledger, s);
+  const verdictOf = new Map(V.rows.map((r) => [r.id, r]));
 
   useEffect(() => {
     if (!KEY) return;
     for (const h of homes) {
-      if ((isNum(h.lat) && isNum(h.lng)) || tried.current.has(h.id) || !h.name) continue;
-      tried.current.add(h.id);
-      const sido = h.lawdCd && !h.lawdCd.startsWith("11") ? "" : "서울 ";
-      const addr = `${sido}${h.gu ?? ""} ${h.dong ?? ""} ${h.jibun ?? ""}`.trim();
-      const kw = `${h.gu ?? ""} ${h.dong ?? ""} ${h.aptNm || h.name}`.trim();
-      geocode(h.jibun ? addr : "", kw)
-        .then((p) => p && write("homes", h.id, { lat: p.lat, lng: p.lng }))
+      const key = geoKeyOf(h);
+      if (!key || h.geoKey === key || tried.current.has(`${h.id}:${key}`)) continue;
+      tried.current.add(`${h.id}:${key}`);
+      const seoul = !h.lawdCd || h.lawdCd.startsWith("11");
+      const addr = h.jibun ? `${seoul ? "서울 " : ""}${h.gu ?? ""} ${h.dong ?? ""} ${h.jibun}`.trim() : "";
+      const kw = `${seoul ? "서울 " : ""}${h.gu ?? ""} ${h.dong ?? ""} ${h.aptNm || h.name}`.replace(/\s+/g, " ").trim();
+      geocode(addr, kw)
+        .then((p) => write("homes", h.id, p ? { lat: p.lat, lng: p.lng, geoKey: key } : { lat: null, lng: null, geoKey: key }))
         .catch(() => {});
     }
   }, [homes, write]);
 
   const points: MapPoint[] = homes
-    .filter((h) => isNum(h.lat) && isNum(h.lng))
-    .map((h) => ({
-      key: h.id,
-      kind: "home" as const,
-      label: h.name,
-      sub: isNum(h.price) ? eok(h.price).replace(" 원", "") : isNum(h.recent) ? `실거래 ${eok(h.recent).replace(" 원", "")}` : h.kind || "",
-      lat: h.lat as number,
-      lng: h.lng as number,
-      onClick: () => setDrawer({ col: "homes", id: h.id }),
-    }));
+    // 좌표를 찾은 뒤 이름·위치가 바뀌었으면(geoKey 불일치) 다시 찾을 때까지 숨긴다
+    .filter((h) => isNum(h.lat) && isNum(h.lng) && h.geoKey === geoKeyOf(h))
+    .map((h) => {
+      const v = verdictOf.get(h.id);
+      const short = (n: number) => eok(n).replace(" 원", "");
+      const price = h.kind === "전세" ? (isNum(h.jeonse) ? `전세 ${short(h.jeonse)}` : "") : isNum(h.price) ? short(h.price) : isNum(h.recent) ? `실거래 ${short(h.recent)}` : "";
+      return {
+        key: h.id,
+        kind: "home" as const,
+        tone: v?.verdict,
+        label: h.name,
+        sub: [price, v ? verdictText(v, short) : "제외"].filter(Boolean).join(" · "),
+        lat: h.lat as number,
+        lng: h.lng as number,
+        onClick: () => setDrawer({ col: "homes", id: h.id }),
+      };
+    });
   if (extra) points.push(extra);
   if (!homes.length && !extra) return null;
-  return <KakaoMap points={points} />;
+  return (
+    <>
+      {V.rows.length > 0 && (
+        <p className="small" style={{ margin: "0 0 6px", display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <b>지금 자금으로</b>
+          <span><i className="dot ok" /> 가능 {V.ok}</span>
+          <span><i className="dot short" /> 부족 {V.short}</span>
+          {V.none > 0 && <span><i className="dot none" /> 가격 입력 필요 {V.none}</span>}
+          <span className="muted">(신혼집 탭 자금·대출 조건 기준 · 핀을 누르면 상세)</span>
+        </p>
+      )}
+      <KakaoMap points={points} />
+    </>
+  );
 }

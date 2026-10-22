@@ -14,6 +14,10 @@ import { DressPrices } from "./tabs/DressPrices";
 import { Halls } from "./tabs/Halls";
 import { Board } from "./tabs/Board";
 import { House } from "./tabs/House";
+import { Guests } from "./tabs/Guests";
+import { Schedule } from "./tabs/Schedule";
+import { TrashPanel } from "./TrashPanel";
+import { CardLabels } from "./CardLabels";
 
 export function LedgerApp() {
   return (
@@ -53,7 +57,8 @@ function ExportButton() {
 }
 
 function Shell() {
-  const { ledger, s, sync, ui, setUI } = useStore();
+  const { ledger, s, sync, ui, setUI, needsMigration } = useStore();
+  const [trash, setTrash] = useState(false);
   const counts = useMemo(() => {
     const v = listOf<Vendor>(ledger.vendors);
     const vc = (c: string) => v.filter((x) => x.cat === c).length;
@@ -66,6 +71,7 @@ function Shell() {
       board: Object.keys(ledger.dresses).length,
       house: Object.keys(ledger.homes).length,
       budget: Object.keys(ledger.budget).length,
+      guests: Object.keys(ledger.guests).length,
       dprice: Object.keys(dressPriceIndex(ledger).by).length,
     } as Record<string, number>;
   }, [ledger]);
@@ -89,6 +95,7 @@ function Shell() {
         <div className="top-actions">
           <span className="sync">{sync}</span>
           <ExportButton />
+          <button className="btn small ghost" onClick={() => setTrash(true)}>휴지통</button>
           <form action="/auth/signout" method="post">
             <button className="btn small ghost">로그아웃</button>
           </form>
@@ -103,9 +110,14 @@ function Shell() {
         ))}
       </nav>
       <main>
+        {needsMigration && (tab === "guests" || tab === "schedule") && (
+          <p className="note">이 탭을 쓰려면 Supabase SQL Editor에서 <code>supabase/migrations/0002_sync_trash_features.sql</code>을 한 번 실행해 주세요. 실행 전에 넣은 내용은 저장되지 않아요.</p>
+        )}
         {tab === "summary" ? <Summary go={go} /> :
          tab === "budget" ? <Budget go={go} /> :
          tab === "planner" ? <Planner /> :
+         tab === "guests" ? <Guests go={go} /> :
+         tab === "schedule" ? <Schedule go={go} /> :
          tab === "hall" ? <Halls /> :
          tab === "board" ? <Board /> :
          tab === "house" ? <House /> :
@@ -113,6 +125,8 @@ function Shell() {
          <Vendors cat={tab as "studio" | "dress" | "makeup"} go={go} />}
       </main>
       <Drawer />
+      <CardLabels />
+      {trash && <TrashPanel onClose={() => setTrash(false)} />}
     </div>
   );
 }
